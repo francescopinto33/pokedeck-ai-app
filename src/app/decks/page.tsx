@@ -51,7 +51,26 @@ export default function DecksPage() {
               sampleCards
             );
             const missingItems = comparison.items.filter((item) => item.missing > 0);
-
+            const buildabilityStatus =
+            comparison.totalMissingCards === 0
+              ? "vollstaendig"
+              : comparison.totalMissingCards < validation.totalCards / 2
+                ? "teilweise"
+                : "nicht";
+          
+          const buildabilityLabel =
+            buildabilityStatus === "vollstaendig"
+              ? "Deck vollständig baubar"
+              : buildabilityStatus === "teilweise"
+                ? "Deck teilweise baubar"
+                : "Deck nicht baubar";
+          
+          const buildabilityClass =
+            buildabilityStatus === "vollstaendig"
+              ? "mt-2 text-sm font-medium text-green-700"
+              : buildabilityStatus === "teilweise"
+                ? "mt-2 text-sm font-medium text-amber-700"
+                : "mt-2 text-sm font-medium text-red-700";
             return (
               <article
                 key={deck.id}
@@ -93,17 +112,7 @@ export default function DecksPage() {
                         Sammlungs-Abgleich
                       </h3>
 
-                      <p
-                        className={
-                          comparison.isFullyBuildable
-                            ? "mt-2 text-sm font-medium text-green-700"
-                            : "mt-2 text-sm font-medium text-red-700"
-                        }
-                      >
-                        {comparison.isFullyBuildable
-                          ? "Deck vollständig baubar"
-                          : "Deck nicht vollständig baubar"}
-                      </p>
+                      <p className={buildabilityClass}>{buildabilityLabel}</p>
 
                       <div className="mt-2 space-y-1 text-sm text-slate-700">
                         <p>
