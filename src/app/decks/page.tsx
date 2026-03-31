@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { sampleCards } from "@/data/sampleCards";
-import { deleteDeck, getSavedDecks } from "@/lib/storage";
+import { getCollection, deleteDeck, getSavedDecks } from "@/lib/storage";
 import { validateDeck } from "@/lib/validateDeck";
-import type { Deck } from "@/types";
+import { compareDeckToCollection } from "@/lib/compareDeckToCollection";
+import type { CollectionEntry, Deck } from "@/types";
 
 export default function DecksPage() {
   const [decks, setDecks] = useState<Deck[]>([]);
+  const [collection, setCollection] = useState<CollectionEntry[]>([]);
 
   useEffect(() => {
     setDecks(getSavedDecks());
+    setCollection(getCollection());
   }, []);
 
   function handleDeleteDeck(id: string) {
@@ -42,6 +45,11 @@ export default function DecksPage() {
         <div className="space-y-4">
           {decks.map((deck) => {
             const validation = validateDeck(deck, sampleCards);
+            const comparison = compareDeckToCollection(
+              deck,
+              collection,
+              sampleCards
+            );
 
             return (
               <article
@@ -49,30 +57,68 @@ export default function DecksPage() {
                 className="rounded-xl border bg-white p-6 shadow-sm"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">
-                      {deck.name}
-                    </h2>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Karten insgesamt: {validation.totalCards}
-                    </p>
-                    <p
-                      className={
-                        validation.isValid
-                          ? "mt-2 text-sm font-medium text-green-700"
-                          : "mt-2 text-sm font-medium text-red-700"
-                      }
-                    >
-                      {validation.isValid ? "Gültig" : "Ungültig"}
-                    </p>
+                  <div className="space-y-3">
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-900">
+                        {deck.name}
+                      </h2>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Karten insgesamt: {validation.totalCards}
+                      </p>
+                    </div>
 
-                    {!validation.isValid && validation.errors.length > 0 ? (
-                      <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-red-700">
-                        {validation.errors.map((error) => (
-                          <li key={error}>{error}</li>
-                        ))}
-                      </ul>
-                    ) : null}
+                    <div>
+                      <p
+                        className={
+                          validation.isValid
+                            ? "text-sm font-medium text-green-700"
+                            : "text-sm font-medium text-red-700"
+                        }
+                      >
+                        {validation.isValid ? "Gültig" : "Ungültig"}
+                      </p>
+
+                      {!validation.isValid && validation.errors.length > 0 ? (
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-700">
+                          {validation.errors.map((error) => (
+                            <li key={error}>{error}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+
+                    <div className="rounded-lg border bg-slate-50 p-4">
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Sammlungs-Abgleich
+                      </h3>
+
+                      <p
+                        className={
+                          comparison.isFullyBuildable
+                            ? "mt-2 text-sm font-medium text-green-700"
+                            : "mt-2 text-sm font-medium text-red-700"
+                        }
+                      >
+                        {comparison.isFullyBuildable
+                          ? "Deck vollständig baubar"
+                          : "Deck nicht vollständig baubar"}
+                      </p>
+
+                      <div className="mt-2 space-y-1 text-sm text-slate-700">
+                        <p>
+                          Fehlende Karten insgesamt:{" "}
+                          <span className="font-medium">
+                            {comparison.totalMissingCards}
+                          </span>
+                        </p>
+                        <p>
+                          Verschiedene fehlende Karten:{" "}
+                          <span className="font-medium">
+                            {comparison.missingUniqueCards}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex gap-2">
