@@ -50,6 +50,7 @@ export default function DecksPage() {
               collection,
               sampleCards
             );
+            const missingItems = comparison.items.filter((item) => item.missing > 0);
 
             return (
               <article
@@ -57,7 +58,7 @@ export default function DecksPage() {
                 className="rounded-xl border bg-white p-6 shadow-sm"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
                       <h2 className="text-lg font-semibold text-slate-900">
                         {deck.name}
@@ -117,6 +118,39 @@ export default function DecksPage() {
                             {comparison.missingUniqueCards}
                           </span>
                         </p>
+                      </div>
+
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-slate-900">
+                          Fehlende Karten im Detail
+                        </h4>
+
+                        {missingItems.length === 0 ? (
+                          <p className="mt-2 text-sm text-green-700">
+                            Es fehlen keine Karten.
+                          </p>
+                        ) : (
+                          <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                            {missingItems.map((item) => (
+                              <li
+                                key={item.cardId}
+                                className="rounded border bg-white p-3"
+                              >
+                                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                  <span className="font-medium text-slate-900">
+                                    {item.cardName}
+                                  </span>
+                                  <span className="text-red-700">
+                                    Fehlt: {item.missing}
+                                  </span>
+                                </div>
+                                <div className="mt-1 text-xs text-slate-600">
+                                  Benötigt: {item.needed} • Vorhanden: {item.owned}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
                     </div>
                   </div>
