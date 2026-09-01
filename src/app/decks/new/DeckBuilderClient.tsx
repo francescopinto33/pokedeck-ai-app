@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { sampleCards } from "@/data/sampleCards";
-import { getDeckById, upsertDeck } from "@/lib/storage";
+import { getCollection, getDeckById, upsertDeck } from "@/lib/storage";
 import { validateDeck } from "@/lib/validateDeck";
-import type { Card, Deck, DeckCard } from "@/types";
+import type { Card, CollectionEntry, Deck, DeckCard } from "@/types";
 
 type CardFilter = "All" | Card["supertype"];
 
@@ -42,11 +42,14 @@ export default function DeckBuilderClient() {
   const [createdAt, setCreatedAt] = useState<string>("");
   const [deckName, setDeckName] = useState("");
   const [deckCards, setDeckCards] = useState<DeckCard[]>([]);
+  const [collection, setCollection] = useState<CollectionEntry[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
   const [search, setSearch] = useState("");
   const [cardFilter, setCardFilter] = useState<CardFilter>("All");
 
   useEffect(() => {
+    setCollection(getCollection());
+
     if (!deckIdFromUrl) {
       const newId = createDeckId();
       const now = new Date().toISOString();
@@ -117,6 +120,11 @@ export default function DeckBuilderClient() {
   function getCardCount(cardId: string) {
     const existingEntry = deckCards.find((entry) => entry.cardId === cardId);
     return existingEntry ? existingEntry.count : 0;
+  }
+
+  function getOwnedCount(cardId: string) {
+    const collectionEntry = collection.find((entry) => entry.cardId === cardId);
+    return collectionEntry ? collectionEntry.owned : 0;
   }
 
   function changeCardCount(cardId: string, change: number) {
@@ -302,6 +310,8 @@ export default function DeckBuilderClient() {
 
               {filteredCards.map((card) => {
                 const count = getCardCount(card.id);
+                const owned = getOwnedCount(card.id);
+                const missing = Math.max(0, count - owned);
 
                 return (
                   <div
@@ -313,6 +323,9 @@ export default function DeckBuilderClient() {
                       <p className="text-sm text-slate-600">
                         {card.supertype}
                         {card.subtype ? ` • ${card.subtype}` : ""}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Sammlung: {owned} vorhanden • Fehlt fürs Deck: {missing}
                       </p>
                     </div>
 
