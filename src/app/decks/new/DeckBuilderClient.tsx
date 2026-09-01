@@ -25,6 +25,7 @@ export default function DeckBuilderClient() {
   const [deckName, setDeckName] = useState("");
   const [deckCards, setDeckCards] = useState<DeckCard[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!deckIdFromUrl) {
@@ -60,6 +61,17 @@ export default function DeckBuilderClient() {
   const totalCards = useMemo(() => {
     return deckCards.reduce((sum, entry) => sum + entry.count, 0);
   }, [deckCards]);
+  const filteredCards = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return sampleCards;
+    }
+
+    return sampleCards.filter((card) =>
+      card.name.toLowerCase().includes(normalizedSearch)
+    );
+  }, [search]);
 
   const validationResult = useMemo(() => {
     const deckToValidate: Deck = {
@@ -177,8 +189,31 @@ export default function DeckBuilderClient() {
               Fuege Karten mit +1 hinzu oder entferne sie mit -1.
             </p>
 
+            <div className="mt-4">
+              <label
+                htmlFor="deck-card-search"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Karten suchen
+              </label>
+              <input
+                id="deck-card-search"
+                type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Zum Beispiel: Pikachu"
+                className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
+              />
+            </div>
+
             <div className="mt-4 space-y-3">
-              {sampleCards.map((card) => {
+              {filteredCards.length === 0 ? (
+                <div className="rounded-lg border p-4 text-sm text-slate-600">
+                  Keine Karten gefunden.
+                </div>
+              ) : null}
+
+              {filteredCards.map((card) => {
                 const count = getCardCount(card.id);
 
                 return (
