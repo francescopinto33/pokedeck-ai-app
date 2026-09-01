@@ -57,6 +57,7 @@ export default function DeckBuilderClient() {
   const [cardFilter, setCardFilter] = useState<CardFilter>("All");
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
   const [isDraftDirty, setIsDraftDirty] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
 
   useEffect(() => {
     setCollection(getCollection());
@@ -70,6 +71,7 @@ export default function DeckBuilderClient() {
       setDeckName(existingDraft.name);
       setDeckCards(existingDraft.cards);
       setIsDraftDirty(false);
+      setHasDraft(true);
       return;
     }
 
@@ -82,6 +84,7 @@ export default function DeckBuilderClient() {
       setDeckName("");
       setDeckCards([]);
       setIsDraftDirty(false);
+      setHasDraft(false);
       return;
     }
 
@@ -96,6 +99,7 @@ export default function DeckBuilderClient() {
       setDeckName("");
       setDeckCards([]);
       setIsDraftDirty(false);
+      setHasDraft(false);
       return;
     }
 
@@ -104,6 +108,7 @@ export default function DeckBuilderClient() {
     setDeckName(existingDeck.name);
     setDeckCards(existingDeck.cards);
     setIsDraftDirty(false);
+    setHasDraft(false);
   }, [deckIdFromUrl]);
 
   useEffect(() => {
@@ -130,6 +135,7 @@ export default function DeckBuilderClient() {
   const totalCards = useMemo(() => {
     return deckCards.reduce((sum, entry) => sum + entry.count, 0);
   }, [deckCards]);
+  const hasDraftContent = deckName.trim() !== "" || deckCards.length > 0;
 
   const deckSizeMessage =
     totalCards < 60
@@ -196,6 +202,7 @@ export default function DeckBuilderClient() {
     setSaveMessage("");
     setCopyMessage("");
     setIsDraftDirty(true);
+    setHasDraft(true);
 
     setDeckCards((currentCards) => {
       const existingEntry = currentCards.find((entry) => entry.cardId === cardId);
@@ -227,6 +234,43 @@ export default function DeckBuilderClient() {
     setSearch("");
     setCardFilter("All");
     setShowOwnedOnly(false);
+  }
+
+  function handleDiscardDraft() {
+    deleteDeckDraft(deckIdFromUrl ? "deck-" + deckIdFromUrl : "new");
+    setIsDraftDirty(false);
+    setHasDraft(false);
+    setSaveMessage("");
+    setCopyMessage("");
+
+    if (!deckIdFromUrl) {
+      const newId = createDeckId();
+      const now = new Date().toISOString();
+
+      setDeckId(newId);
+      setCreatedAt(now);
+      setDeckName("");
+      setDeckCards([]);
+      return;
+    }
+
+    const savedDeck = getDeckById(deckIdFromUrl);
+
+    if (savedDeck) {
+      setDeckId(savedDeck.id);
+      setCreatedAt(savedDeck.createdAt);
+      setDeckName(savedDeck.name);
+      setDeckCards(savedDeck.cards);
+      return;
+    }
+
+    const fallbackId = createDeckId();
+    const now = new Date().toISOString();
+
+    setDeckId(fallbackId);
+    setCreatedAt(now);
+    setDeckName("");
+    setDeckCards([]);
   }
 
   async function handleCopyMissingCards() {
@@ -286,6 +330,7 @@ export default function DeckBuilderClient() {
     upsertDeck(deckToSave);
     deleteDeckDraft(deckIdFromUrl ? "deck-" + deckIdFromUrl : "new");
     setIsDraftDirty(false);
+    setHasDraft(false);
     setSaveMessage("Deck wurde gespeichert.");
     router.push("/decks");
   }
@@ -302,6 +347,15 @@ export default function DeckBuilderClient() {
         <p className="mt-1 text-sm text-slate-500">
           Ungespeicherte Änderungen werden auf diesem Gerät als Entwurf gesichert.
         </p>
+        {hasDraft && hasDraftContent ? (
+          <button
+            type="button"
+            onClick={handleDiscardDraft}
+            className="mt-3 text-sm font-medium text-red-700 underline hover:text-red-800"
+          >
+            Entwurf verwerfen
+          </button>
+        ) : null}
 
         <div className="mt-4">
           <label
@@ -317,6 +371,7 @@ export default function DeckBuilderClient() {
             onChange={(event) => {
               setDeckName(event.target.value);
               setIsDraftDirty(true);
+              setHasDraft(true);
             }}
             placeholder="Zum Beispiel: Mein erstes Feuer-Deck"
             className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
