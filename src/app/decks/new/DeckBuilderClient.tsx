@@ -4,7 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { sampleCards } from "@/data/sampleCards";
 import { compareDeckToCollection } from "@/lib/compareDeckToCollection";
-import { getCollection, getDeckById, upsertDeck } from "@/lib/storage";
+import {
+  deleteDeckDraft,
+  getCollection,
+  getDeckById,
+  getDeckDraft,
+  saveDeckDraft,
+  upsertDeck,
+} from "@/lib/storage";
 import { validateDeck } from "@/lib/validateDeck";
 import type { Card, CollectionEntry, Deck, DeckCard } from "@/types";
 
@@ -49,9 +56,22 @@ export default function DeckBuilderClient() {
   const [search, setSearch] = useState("");
   const [cardFilter, setCardFilter] = useState<CardFilter>("All");
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
+  const [isDraftDirty, setIsDraftDirty] = useState(false);
 
   useEffect(() => {
     setCollection(getCollection());
+
+    const draftKey = deckIdFromUrl ? "deck-" + deckIdFromUrl : "new";
+    const existingDraft = getDeckDraft(draftKey);
+
+    if (existingDraft) {
+      setDeckId(existingDraft.id);
+      setCreatedAt(existingDraft.createdAt);
+      setDeckName(existingDraft.name);
+      setDeckCards(existingDraft.cards);
+      setIsDraftDirty(false);
+      return;
+    }
 
     if (!deckIdFromUrl) {
       const newId = createDeckId();
@@ -61,6 +81,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName("");
       setDeckCards([]);
+      setIsDraftDirty(false);
       return;
     }
 
@@ -74,6 +95,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName("");
       setDeckCards([]);
+      setIsDraftDirty(false);
       return;
     }
 
@@ -81,7 +103,29 @@ export default function DeckBuilderClient() {
     setCreatedAt(existingDeck.createdAt);
     setDeckName(existingDeck.name);
     setDeckCards(existingDeck.cards);
+    setIsDraftDirty(false);
   }, [deckIdFromUrl]);
+
+  useEffect(() => {
+    if (!isDraftDirty || !deckId || !createdAt) {
+      return;
+    }
+
+    const draftKey = deckIdFromUrl ? "deck-" + deckIdFromUrl : "new";
+
+    if (deckName.trim() === "" && deckCards.length === 0) {
+      deleteDeckDraft(draftKey);
+      return;
+    }
+
+    saveDeckDraft(draftKey, {
+      id: deckId,
+      name: deckName,
+      cards: deckCards,
+      createdAt,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [createdAt, deckCards, deckId, deckIdFromUrl, deckName, isDraftDirty]);
 
   const totalCards = useMemo(() => {
     return deckCards.reduce((sum, entry) => sum + entry.count, 0);
@@ -151,6 +195,7 @@ export default function DeckBuilderClient() {
   function changeCardCount(cardId: string, change: number) {
     setSaveMessage("");
     setCopyMessage("");
+    setIsDraftDirty(true);
 
     setDeckCards((currentCards) => {
       const existingEntry = currentCards.find((entry) => entry.cardId === cardId);
@@ -239,6 +284,8 @@ export default function DeckBuilderClient() {
     };
 
     upsertDeck(deckToSave);
+    deleteDeckDraft(deckIdFromUrl ? "deck-" + deckIdFromUrl : "new");
+    setIsDraftDirty(false);
     setSaveMessage("Deck wurde gespeichert.");
     router.push("/decks");
   }
@@ -252,6 +299,9 @@ export default function DeckBuilderClient() {
         <p className="mt-2 text-slate-600">
           Erstelle ein Deck, fuege Karten hinzu und pruefe die Grundregeln live.
         </p>
+        <p className="mt-1 text-sm text-slate-500">
+          Ungespeicherte Änderungen werden auf diesem Gerät als Entwurf gesichert.
+        </p>
 
         <div className="mt-4">
           <label
@@ -264,7 +314,10 @@ export default function DeckBuilderClient() {
             id="deck-name"
             type="text"
             value={deckName}
-            onChange={(event) => setDeckName(event.target.value)}
+            onChange={(event) => {
+              setDeckName(event.target.value);
+              setIsDraftDirty(true);
+            }}
             placeholder="Zum Beispiel: Mein erstes Feuer-Deck"
             className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
           />

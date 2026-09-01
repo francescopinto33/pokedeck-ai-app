@@ -2,6 +2,7 @@ import type { CollectionEntry, Deck } from "@/types";
 
 const DECKS_KEY = "pokedeck-ai-decks";
 const COLLECTION_KEY = "pokedeck-ai-collection";
+const DECK_DRAFTS_KEY = "pokedeck-ai-deck-drafts";
 
 function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -72,4 +73,29 @@ export function saveCollection(entries: CollectionEntry[]): void {
   }
 
   window.localStorage.setItem(COLLECTION_KEY, JSON.stringify(entries));
+}
+
+export function getDeckDraft(draftKey: string): Deck | undefined {
+  const drafts = readJson<Record<string, Deck>>(DECK_DRAFTS_KEY, {});
+  return drafts[draftKey];
+}
+
+export function saveDeckDraft(draftKey: string, deck: Deck): void {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  const drafts = readJson<Record<string, Deck>>(DECK_DRAFTS_KEY, {});
+  drafts[draftKey] = deck;
+  window.localStorage.setItem(DECK_DRAFTS_KEY, JSON.stringify(drafts));
+}
+
+export function deleteDeckDraft(draftKey: string): void {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  const drafts = readJson<Record<string, Deck>>(DECK_DRAFTS_KEY, {});
+  delete drafts[draftKey];
+  window.localStorage.setItem(DECK_DRAFTS_KEY, JSON.stringify(drafts));
 }
