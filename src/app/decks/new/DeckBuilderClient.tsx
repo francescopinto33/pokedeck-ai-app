@@ -58,9 +58,12 @@ export default function DeckBuilderClient() {
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
   const [isDraftDirty, setIsDraftDirty] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [isDiscardConfirmationVisible, setIsDiscardConfirmationVisible] =
+    useState(false);
 
   useEffect(() => {
     setCollection(getCollection());
+    setIsDiscardConfirmationVisible(false);
 
     const draftKey = deckIdFromUrl ? "deck-" + deckIdFromUrl : "new";
     const existingDraft = getDeckDraft(draftKey);
@@ -240,6 +243,7 @@ export default function DeckBuilderClient() {
     deleteDeckDraft(deckIdFromUrl ? "deck-" + deckIdFromUrl : "new");
     setIsDraftDirty(false);
     setHasDraft(false);
+    setIsDiscardConfirmationVisible(false);
     setSaveMessage("");
     setCopyMessage("");
 
@@ -331,6 +335,7 @@ export default function DeckBuilderClient() {
     deleteDeckDraft(deckIdFromUrl ? "deck-" + deckIdFromUrl : "new");
     setIsDraftDirty(false);
     setHasDraft(false);
+    setIsDiscardConfirmationVisible(false);
     setSaveMessage("Deck wurde gespeichert.");
     router.push("/decks");
   }
@@ -348,13 +353,39 @@ export default function DeckBuilderClient() {
           Ungespeicherte Änderungen werden auf diesem Gerät als Entwurf gesichert.
         </p>
         {hasDraft && hasDraftContent ? (
-          <button
-            type="button"
-            onClick={handleDiscardDraft}
-            className="mt-3 text-sm font-medium text-red-700 underline hover:text-red-800"
-          >
-            Entwurf verwerfen
-          </button>
+          <div className="mt-3">
+            {isDiscardConfirmationVisible ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                <p className="text-sm text-red-800">
+                  Entwurf wirklich verwerfen? Ungespeicherte Änderungen gehen verloren.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDiscardDraft}
+                    className="rounded border border-red-700 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+                  >
+                    Entwurf verwerfen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsDiscardConfirmationVisible(false)}
+                    className="rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsDiscardConfirmationVisible(true)}
+                className="text-sm font-medium text-red-700 underline hover:text-red-800"
+              >
+                Entwurf verwerfen
+              </button>
+            )}
+          </div>
         ) : null}
 
         <div className="mt-4">
