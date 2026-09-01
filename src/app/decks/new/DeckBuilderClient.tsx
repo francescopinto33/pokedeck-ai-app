@@ -395,9 +395,24 @@ export default function DeckBuilderClient() {
                   Alle Karten für dieses Deck sind in deiner Sammlung vorhanden.
                 </p>
               ) : (
-                <p className="mt-1 text-red-700">
-                  Es fehlen noch {collectionComparison.totalMissingCards} Karten für dieses Deck ({collectionComparison.missingUniqueCards} verschiedene Karten).
-                </p>
+                <>
+                  <p className="mt-1 text-red-700">
+                    Es fehlen noch {collectionComparison.totalMissingCards} Karten für dieses Deck ({collectionComparison.missingUniqueCards} verschiedene Karten).
+                  </p>
+                  <ul className="mt-2 space-y-1 text-slate-700">
+                    {collectionComparison.items
+                      .filter((item) => item.missing > 0)
+                      .map((item) => (
+                        <li
+                          key={item.cardId}
+                          className="flex items-center justify-between gap-2"
+                        >
+                          <span>{item.cardName}</span>
+                          <span className="font-medium">Fehlt: {item.missing}</span>
+                        </li>
+                      ))}
+                  </ul>
+                </>
               )}
             </div>
 
