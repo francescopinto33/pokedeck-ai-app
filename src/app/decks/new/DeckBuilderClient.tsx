@@ -48,6 +48,7 @@ export default function DeckBuilderClient() {
   const [copyMessage, setCopyMessage] = useState("");
   const [search, setSearch] = useState("");
   const [cardFilter, setCardFilter] = useState<CardFilter>("All");
+  const [showOwnedOnly, setShowOwnedOnly] = useState(false);
 
   useEffect(() => {
     setCollection(getCollection());
@@ -93,7 +94,8 @@ export default function DeckBuilderClient() {
         ? "Die Zielgröße von 60 Karten ist erreicht."
         : (totalCards - 60) + " Karten über dem Ziel von 60.";
 
-  const hasActiveCardFilters = search.trim() !== "" || cardFilter !== "All";
+  const hasActiveCardFilters =
+    search.trim() !== "" || cardFilter !== "All" || showOwnedOnly;
 
   const filteredCards = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -102,10 +104,15 @@ export default function DeckBuilderClient() {
       const matchesSearch = card.name.toLowerCase().includes(normalizedSearch);
       const matchesFilter =
         cardFilter === "All" || card.supertype === cardFilter;
+      const matchesCollection =
+        !showOwnedOnly ||
+        collection.some(
+          (entry) => entry.cardId === card.id && entry.owned > 0
+        );
 
-      return matchesSearch && matchesFilter;
+      return matchesSearch && matchesFilter && matchesCollection;
     });
-  }, [cardFilter, search]);
+  }, [cardFilter, collection, search, showOwnedOnly]);
 
   const validationResult = useMemo(() => {
     const deckToValidate: Deck = {
@@ -174,6 +181,7 @@ export default function DeckBuilderClient() {
   function resetCardFilters() {
     setSearch("");
     setCardFilter("All");
+    setShowOwnedOnly(false);
   }
 
   async function handleCopyMissingCards() {
@@ -314,6 +322,21 @@ export default function DeckBuilderClient() {
                 })}
               </div>
             </fieldset>
+
+            <div className="mt-4">
+              <button
+                type="button"
+                aria-pressed={showOwnedOnly}
+                onClick={() => setShowOwnedOnly((currentValue) => !currentValue)}
+                className={
+                  showOwnedOnly
+                    ? "rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                    : "rounded-lg border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                }
+              >
+                Nur vorhandene Karten
+              </button>
+            </div>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-slate-600">
