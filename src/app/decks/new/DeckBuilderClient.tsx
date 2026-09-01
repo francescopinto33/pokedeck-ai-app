@@ -80,6 +80,16 @@ export default function DeckBuilderClient() {
   const totalCards = useMemo(() => {
     return deckCards.reduce((sum, entry) => sum + entry.count, 0);
   }, [deckCards]);
+
+  const deckSizeMessage =
+    totalCards < 60
+      ? "Noch " + (60 - totalCards) + " Karten bis 60."
+      : totalCards === 60
+        ? "Die Zielgröße von 60 Karten ist erreicht."
+        : (totalCards - 60) + " Karten über dem Ziel von 60.";
+
+  const hasActiveCardFilters = search.trim() !== "" || cardFilter !== "All";
+
   const filteredCards = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
@@ -136,6 +146,11 @@ export default function DeckBuilderClient() {
         })
         .filter((entry) => entry.count > 0);
     });
+  }
+
+  function resetCardFilters() {
+    setSearch("");
+    setCardFilter("All");
   }
 
   const selectedCards = useMemo(() => {
@@ -261,7 +276,24 @@ export default function DeckBuilderClient() {
               </div>
             </fieldset>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-slate-600">
+                {filteredCards.length} {filteredCards.length === 1 ? "Karte" : "Karten"}{" "}
+                angezeigt
+              </p>
+
+              {hasActiveCardFilters ? (
+                <button
+                  type="button"
+                  onClick={resetCardFilters}
+                  className="text-sm font-medium text-slate-700 underline hover:text-slate-900"
+                >
+                  Filter zurücksetzen
+                </button>
+              ) : null}
+            </div>
+
+            <div className="mt-3 space-y-3">
               {filteredCards.length === 0 ? (
                 <div className="rounded-lg border p-4 text-sm text-slate-600">
                   Keine Karten gefunden.
@@ -321,8 +353,9 @@ export default function DeckBuilderClient() {
 
             <div className="mt-4">
               <p className="text-sm font-medium text-slate-800">
-                Gesamtzahl Karten: {totalCards}
+                Gesamtzahl Karten: {totalCards} / 60
               </p>
+              <p className="mt-1 text-sm text-slate-600">{deckSizeMessage}</p>
             </div>
 
             <div className="mt-4 space-y-4">
