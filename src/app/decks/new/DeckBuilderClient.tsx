@@ -7,6 +7,15 @@ import { getDeckById, upsertDeck } from "@/lib/storage";
 import { validateDeck } from "@/lib/validateDeck";
 import type { Deck, DeckCard } from "@/types";
 
+type CardFilter = "All" | "Pokemon" | "Trainer" | "Energy";
+
+const cardFilterOptions: Array<{ value: CardFilter; label: string }> = [
+  { value: "All", label: "Alle" },
+  { value: "Pokemon", label: "Pokémon" },
+  { value: "Trainer", label: "Trainer" },
+  { value: "Energy", label: "Energie" },
+];
+
 function createDeckId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -26,6 +35,7 @@ export default function DeckBuilderClient() {
   const [deckCards, setDeckCards] = useState<DeckCard[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [cardFilter, setCardFilter] = useState<CardFilter>("All");
 
   useEffect(() => {
     if (!deckIdFromUrl) {
@@ -64,14 +74,14 @@ export default function DeckBuilderClient() {
   const filteredCards = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    if (!normalizedSearch) {
-      return sampleCards;
-    }
+    return sampleCards.filter((card) => {
+      const matchesSearch = card.name.toLowerCase().includes(normalizedSearch);
+      const matchesFilter =
+        cardFilter === "All" || card.supertype === cardFilter;
 
-    return sampleCards.filter((card) =>
-      card.name.toLowerCase().includes(normalizedSearch)
-    );
-  }, [search]);
+      return matchesSearch && matchesFilter;
+    });
+  }, [cardFilter, search]);
 
   const validationResult = useMemo(() => {
     const deckToValidate: Deck = {
@@ -205,6 +215,33 @@ export default function DeckBuilderClient() {
                 className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
               />
             </div>
+
+            <fieldset className="mt-4">
+              <legend className="mb-2 text-sm font-medium text-slate-700">
+                Kartentyp
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {cardFilterOptions.map((option) => {
+                  const isActive = cardFilter === option.value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={isActive}
+                      onClick={() => setCardFilter(option.value)}
+                      className={
+                        isActive
+                          ? "rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                          : "rounded-lg border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                      }
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
 
             <div className="mt-4 space-y-3">
               {filteredCards.length === 0 ? (
