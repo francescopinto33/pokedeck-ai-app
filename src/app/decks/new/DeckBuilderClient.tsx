@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { sampleCards } from "@/data/sampleCards";
+import { compareDeckToCollection } from "@/lib/compareDeckToCollection";
 import { getCollection, getDeckById, upsertDeck } from "@/lib/storage";
 import { validateDeck } from "@/lib/validateDeck";
 import type { Card, CollectionEntry, Deck, DeckCard } from "@/types";
@@ -116,6 +117,18 @@ export default function DeckBuilderClient() {
 
     return validateDeck(deckToValidate, sampleCards);
   }, [createdAt, deckCards, deckId, deckName]);
+
+  const collectionComparison = useMemo(() => {
+    const deckToCompare: Deck = {
+      id: deckId ?? "temporary-deck",
+      name: deckName || "Unbenanntes Deck",
+      cards: deckCards,
+      createdAt: createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return compareDeckToCollection(deckToCompare, collection, sampleCards);
+  }, [collection, createdAt, deckCards, deckId, deckName]);
 
   function getCardCount(cardId: string) {
     const existingEntry = deckCards.find((entry) => entry.cardId === cardId);
@@ -369,6 +382,23 @@ export default function DeckBuilderClient() {
                 Gesamtzahl Karten: {totalCards} / 60
               </p>
               <p className="mt-1 text-sm text-slate-600">{deckSizeMessage}</p>
+            </div>
+
+            <div className="mt-4 rounded-lg border bg-slate-50 p-3 text-sm">
+              <p className="font-medium text-slate-800">Sammlungsstatus</p>
+              {totalCards === 0 ? (
+                <p className="mt-1 text-slate-600">
+                  Füge Karten hinzu, um dein Deck mit deiner Sammlung abzugleichen.
+                </p>
+              ) : collectionComparison.isFullyBuildable ? (
+                <p className="mt-1 text-green-700">
+                  Alle Karten für dieses Deck sind in deiner Sammlung vorhanden.
+                </p>
+              ) : (
+                <p className="mt-1 text-red-700">
+                  Es fehlen noch {collectionComparison.totalMissingCards} Karten für dieses Deck ({collectionComparison.missingUniqueCards} verschiedene Karten).
+                </p>
+              )}
             </div>
 
             <div className="mt-4 space-y-4">
