@@ -45,6 +45,7 @@ export default function DeckBuilderClient() {
   const [deckCards, setDeckCards] = useState<DeckCard[]>([]);
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
   const [search, setSearch] = useState("");
   const [cardFilter, setCardFilter] = useState<CardFilter>("All");
 
@@ -142,6 +143,7 @@ export default function DeckBuilderClient() {
 
   function changeCardCount(cardId: string, change: number) {
     setSaveMessage("");
+    setCopyMessage("");
 
     setDeckCards((currentCards) => {
       const existingEntry = currentCards.find((entry) => entry.cardId === cardId);
@@ -172,6 +174,22 @@ export default function DeckBuilderClient() {
   function resetCardFilters() {
     setSearch("");
     setCardFilter("All");
+  }
+
+  async function handleCopyMissingCards() {
+    const missingCards = collectionComparison.items.filter(
+      (item) => item.missing > 0
+    );
+    const shoppingList = missingCards
+      .map((item) => item.cardName + ": Fehlt " + item.missing)
+      .join("\n");
+
+    try {
+      await navigator.clipboard.writeText(shoppingList);
+      setCopyMessage("Einkaufsliste wurde kopiert.");
+    } catch {
+      setCopyMessage("Die Einkaufsliste konnte nicht kopiert werden.");
+    }
   }
 
   const selectedCards = useMemo(() => {
@@ -412,6 +430,16 @@ export default function DeckBuilderClient() {
                         </li>
                       ))}
                   </ul>
+                  <button
+                    type="button"
+                    onClick={handleCopyMissingCards}
+                    className="mt-3 rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    Fehlende Karten kopieren
+                  </button>
+                  {copyMessage ? (
+                    <p className="mt-2 text-sm text-slate-600">{copyMessage}</p>
+                  ) : null}
                 </>
               )}
             </div>
