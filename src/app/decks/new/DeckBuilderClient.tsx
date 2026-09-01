@@ -5,15 +5,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { sampleCards } from "@/data/sampleCards";
 import { getDeckById, upsertDeck } from "@/lib/storage";
 import { validateDeck } from "@/lib/validateDeck";
-import type { Deck, DeckCard } from "@/types";
+import type { Card, Deck, DeckCard } from "@/types";
 
-type CardFilter = "All" | "Pokemon" | "Trainer" | "Energy";
+type CardFilter = "All" | Card["supertype"];
 
 const cardFilterOptions: Array<{ value: CardFilter; label: string }> = [
   { value: "All", label: "Alle" },
   { value: "Pokemon", label: "Pokémon" },
   { value: "Trainer", label: "Trainer" },
   { value: "Energy", label: "Energie" },
+];
+
+const deckPreviewSections: Array<{
+  supertype: Card["supertype"];
+  label: string;
+}> = [
+  { supertype: "Pokemon", label: "Pokémon" },
+  { supertype: "Trainer", label: "Trainer" },
+  { supertype: "Energy", label: "Energie" },
 ];
 
 function createDeckId() {
@@ -145,6 +154,15 @@ export default function DeckBuilderClient() {
       })
       .filter(Boolean) as Array<(typeof sampleCards)[number] & { count: number }>;
   }, [deckCards]);
+
+  const groupedSelectedCards = useMemo(() => {
+    return deckPreviewSections.map((section) => ({
+      ...section,
+      cards: selectedCards.filter(
+        (card) => card.supertype === section.supertype
+      ),
+    }));
+  }, [selectedCards]);
 
   function handleSaveDeck() {
     const finalDeckId = deckId ?? createDeckId();
@@ -307,23 +325,41 @@ export default function DeckBuilderClient() {
               </p>
             </div>
 
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-4">
               {selectedCards.length === 0 ? (
                 <p className="text-sm text-slate-600">
                   Noch keine Karten im Deck.
                 </p>
               ) : (
-                selectedCards.map((card) => (
-                  <div
-                    key={card.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
-                  >
-                    <span className="text-sm text-slate-900">{card.name}</span>
-                    <span className="text-sm font-medium text-slate-700">
-                      x{card.count}
-                    </span>
-                  </div>
-                ))
+                groupedSelectedCards.map((section) => {
+                  if (section.cards.length === 0) {
+                    return null;
+                  }
+
+                  return (
+                    <div key={section.supertype}>
+                      <h3 className="mb-2 text-sm font-semibold text-slate-900">
+                        {section.label}
+                      </h3>
+
+                      <div className="space-y-2">
+                        {section.cards.map((card) => (
+                          <div
+                            key={card.id}
+                            className="flex items-center justify-between rounded-lg border p-3"
+                          >
+                            <span className="text-sm text-slate-900">
+                              {card.name}
+                            </span>
+                            <span className="text-sm font-medium text-slate-700">
+                              x{card.count}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
