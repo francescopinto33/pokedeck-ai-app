@@ -51,6 +51,7 @@ export default function DeckBuilderClient() {
   const [deckName, setDeckName] = useState("");
   const [deckCards, setDeckCards] = useState<DeckCard[]>([]);
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
+  const [collectionMessage, setCollectionMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [search, setSearch] = useState("");
@@ -64,6 +65,7 @@ export default function DeckBuilderClient() {
 
   useEffect(() => {
     setCollection(getCollection());
+    setCollectionMessage("");
     setIsDiscardConfirmationVisible(false);
     setDraftMessage("");
 
@@ -204,6 +206,11 @@ export default function DeckBuilderClient() {
   function getOwnedCount(cardId: string) {
     const collectionEntry = collection.find((entry) => entry.cardId === cardId);
     return collectionEntry ? collectionEntry.owned : 0;
+  }
+
+  function handleRefreshCollection() {
+    setCollection(getCollection());
+    setCollectionMessage("Sammlung aktualisiert.");
   }
 
   function changeCardCount(cardId: string, change: number) {
@@ -579,7 +586,21 @@ export default function DeckBuilderClient() {
             </div>
 
             <div className="mt-4 rounded-lg border bg-slate-50 p-3 text-sm">
-              <p className="font-medium text-slate-800">Sammlungsstatus</p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium text-slate-800">Sammlungsstatus</p>
+                <button
+                  type="button"
+                  onClick={handleRefreshCollection}
+                  className="rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+                >
+                  Sammlung aktualisieren
+                </button>
+              </div>
+              {collectionMessage ? (
+                <p aria-live="polite" className="mt-2 text-sm text-green-700">
+                  {collectionMessage}
+                </p>
+              ) : null}
               {totalCards === 0 ? (
                 <p className="mt-1 text-slate-600">
                   Füge Karten hinzu, um dein Deck mit deiner Sammlung abzugleichen.
