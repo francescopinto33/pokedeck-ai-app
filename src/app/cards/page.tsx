@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { sampleCards } from "@/data/sampleCards";
 import { addCardToCollection } from "@/lib/storage";
 import type { Card, CardSearchResponse } from "@/types";
@@ -150,6 +151,17 @@ export default function CardsPage() {
                 key={card.id}
                 className="rounded-xl border bg-white p-5 shadow-sm"
               >
+                {card.imageSmall ? (
+                  <div className="mb-4 flex justify-center rounded-lg bg-slate-50 p-2">
+                    <Image
+                      src={card.imageSmall}
+                      alt={card.name + " – " + (card.setName ?? "Pokémon-Karte")}
+                      width={245}
+                      height={342}
+                      className="h-auto max-h-72 w-auto rounded shadow-sm"
+                    />
+                  </div>
+                ) : null}
                 <h3 className="text-lg font-semibold text-slate-900">
                   {card.name}
                 </h3>
