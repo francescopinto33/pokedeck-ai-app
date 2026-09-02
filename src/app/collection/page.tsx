@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { sampleCards } from "@/data/sampleCards";
+import { getAvailableCards } from "@/lib/availableCards";
 import { getCollection, saveCollection } from "@/lib/storage";
-import type { CollectionEntry } from "@/types";
+import type { Card, CollectionEntry } from "@/types";
 
 export default function CollectionPage() {
   const [entries, setEntries] = useState<CollectionEntry[]>([]);
+  const [allCards, setAllCards] = useState<Card[]>([]);
   const [search, setSearch] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     setEntries(getCollection());
+    setAllCards(getAvailableCards());
   }, []);
 
   function getOwnedCount(cardId: string) {
@@ -57,13 +59,13 @@ export default function CollectionPage() {
     const normalizedSearch = search.trim().toLowerCase();
 
     if (!normalizedSearch) {
-      return sampleCards;
+      return allCards;
     }
 
-    return sampleCards.filter((card) =>
+    return allCards.filter((card) =>
       card.name.toLowerCase().includes(normalizedSearch)
     );
-  }, [search]);
+  }, [allCards, search]);
 
   return (
     <section className="space-y-6">

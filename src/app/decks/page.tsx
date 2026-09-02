@@ -2,19 +2,21 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { sampleCards } from "@/data/sampleCards";
+import { getAvailableCards } from "@/lib/availableCards";
 import { getCollection, deleteDeck, getSavedDecks } from "@/lib/storage";
 import { validateDeck } from "@/lib/validateDeck";
 import { compareDeckToCollection } from "@/lib/compareDeckToCollection";
-import type { CollectionEntry, Deck } from "@/types";
+import type { Card, CollectionEntry, Deck } from "@/types";
 
 export default function DecksPage() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
+  const [allCards, setAllCards] = useState<Card[]>([]);
 
   useEffect(() => {
     setDecks(getSavedDecks());
     setCollection(getCollection());
+    setAllCards(getAvailableCards());
   }, []);
 
   function handleDeleteDeck(id: string) {
@@ -44,11 +46,11 @@ export default function DecksPage() {
       ) : (
         <div className="space-y-4">
           {decks.map((deck) => {
-            const validation = validateDeck(deck, sampleCards);
+            const validation = validateDeck(deck, allCards);
             const comparison = compareDeckToCollection(
               deck,
               collection,
-              sampleCards
+              allCards
             );
             const missingItems = comparison.items.filter((item) => item.missing > 0);
             const buildabilityStatus =

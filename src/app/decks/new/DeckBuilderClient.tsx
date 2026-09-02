@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { sampleCards } from "@/data/sampleCards";
+import { getAvailableCards } from "@/lib/availableCards";
 import { compareDeckToCollection } from "@/lib/compareDeckToCollection";
 import {
   deleteDeckDraft,
@@ -51,6 +51,7 @@ export default function DeckBuilderClient() {
   const [deckName, setDeckName] = useState("");
   const [deckCards, setDeckCards] = useState<DeckCard[]>([]);
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
+  const [allCards, setAllCards] = useState<Card[]>([]);
   const [collectionMessage, setCollectionMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
@@ -65,6 +66,7 @@ export default function DeckBuilderClient() {
 
   useEffect(() => {
     setCollection(getCollection());
+    setAllCards(getAvailableCards());
     setCollectionMessage("");
     setIsDiscardConfirmationVisible(false);
     setDraftMessage("");
@@ -160,7 +162,7 @@ export default function DeckBuilderClient() {
   const filteredCards = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return sampleCards.filter((card) => {
+    return allCards.filter((card) => {
       const matchesSearch = card.name.toLowerCase().includes(normalizedSearch);
       const matchesFilter =
         cardFilter === "All" || card.supertype === cardFilter;
@@ -172,7 +174,7 @@ export default function DeckBuilderClient() {
 
       return matchesSearch && matchesFilter && matchesCollection;
     });
-  }, [cardFilter, collection, search, showOwnedOnly]);
+  }, [allCards, cardFilter, collection, search, showOwnedOnly]);
 
   const validationResult = useMemo(() => {
     const deckToValidate: Deck = {
@@ -183,8 +185,8 @@ export default function DeckBuilderClient() {
       updatedAt: new Date().toISOString(),
     };
 
-    return validateDeck(deckToValidate, sampleCards);
-  }, [createdAt, deckCards, deckId, deckName]);
+    return validateDeck(deckToValidate, allCards);
+  }, [allCards, createdAt, deckCards, deckId, deckName]);
 
   const collectionComparison = useMemo(() => {
     const deckToCompare: Deck = {
@@ -195,8 +197,8 @@ export default function DeckBuilderClient() {
       updatedAt: new Date().toISOString(),
     };
 
-    return compareDeckToCollection(deckToCompare, collection, sampleCards);
-  }, [collection, createdAt, deckCards, deckId, deckName]);
+    return compareDeckToCollection(deckToCompare, collection, allCards);
+  }, [allCards, collection, createdAt, deckCards, deckId, deckName]);
 
   function getCardCount(cardId: string) {
     const existingEntry = deckCards.find((entry) => entry.cardId === cardId);
@@ -210,6 +212,7 @@ export default function DeckBuilderClient() {
 
   function handleRefreshCollection() {
     setCollection(getCollection());
+    setAllCards(getAvailableCards());
     setCollectionMessage("Sammlung aktualisiert.");
   }
 
@@ -310,7 +313,7 @@ export default function DeckBuilderClient() {
   const selectedCards = useMemo(() => {
     return deckCards
       .map((entry) => {
-        const card = sampleCards.find((item) => item.id === entry.cardId);
+        const card = allCards.find((item) => item.id === entry.cardId);
 
         if (!card) {
           return null;
@@ -321,8 +324,8 @@ export default function DeckBuilderClient() {
           count: entry.count,
         };
       })
-      .filter(Boolean) as Array<(typeof sampleCards)[number] & { count: number }>;
-  }, [deckCards]);
+      .filter(Boolean) as Array<Card & { count: number }>;
+  }, [allCards, deckCards]);
 
   const groupedSelectedCards = useMemo(() => {
     return deckPreviewSections.map((section) => ({

@@ -1,8 +1,9 @@
-import type { CollectionEntry, Deck } from "@/types";
+import type { Card, CollectionEntry, Deck } from "@/types";
 
 const DECKS_KEY = "pokedeck-ai-decks";
 const COLLECTION_KEY = "pokedeck-ai-collection";
 const DECK_DRAFTS_KEY = "pokedeck-ai-deck-drafts";
+const IMPORTED_CARDS_KEY = "pokedeck-ai-imported-cards";
 
 function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -73,6 +74,51 @@ export function saveCollection(entries: CollectionEntry[]): void {
   }
 
   window.localStorage.setItem(COLLECTION_KEY, JSON.stringify(entries));
+}
+
+export function getImportedCards(): Card[] {
+  return readJson<Card[]>(IMPORTED_CARDS_KEY, []);
+}
+
+function saveImportedCards(cards: Card[]): void {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.localStorage.setItem(IMPORTED_CARDS_KEY, JSON.stringify(cards));
+}
+
+export function addCardToCollection(card: Card, amount: number): CollectionEntry[] {
+  const safeAmount = Math.max(0, Math.floor(amount));
+
+  if (safeAmount === 0) {
+    return getCollection();
+  }
+
+  const importedCards = getImportedCards();
+  const cardIndex = importedCards.findIndex((item) => item.id === card.id);
+
+  if (cardIndex >= 0) {
+    importedCards[cardIndex] = card;
+  } else {
+    importedCards.push(card);
+  }
+
+  saveImportedCards(importedCards);
+
+  const collection = getCollection();
+  const collectionIndex = collection.findIndex((item) => item.cardId === card.id);
+  const updatedCollection =
+    collectionIndex >= 0
+      ? collection.map((item, index) =>
+          index === collectionIndex
+            ? { ...item, owned: item.owned + safeAmount }
+            : item
+        )
+      : [...collection, { cardId: card.id, owned: safeAmount }];
+
+  saveCollection(updatedCollection);
+  return updatedCollection;
 }
 
 export function getDeckDraft(draftKey: string): Deck | undefined {

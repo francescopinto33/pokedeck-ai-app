@@ -7,6 +7,15 @@ export type Card = {
     isBasicPokemon: boolean;
     isBasicEnergy: boolean;
     legalStandard: boolean;
+    setName?: string;
+    cardNumber?: string;
+    imageSmall?: string;
+    imageLarge?: string;
+  };
+
+  export type CardSearchResponse = {
+    cards: Card[];
+    totalCount: number;
   };
   
   export type DeckCard = {

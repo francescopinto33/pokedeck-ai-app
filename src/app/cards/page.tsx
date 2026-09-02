@@ -2,12 +2,23 @@
 
 import { useMemo, useState } from "react";
 import { sampleCards } from "@/data/sampleCards";
+import { addCardToCollection } from "@/lib/storage";
+import type { Card, CardSearchResponse } from "@/types";
 
 export default function CardsPage() {
-  const [search, setSearch] = useState("");
+  const [localSearch, setLocalSearch] = useState("");
+  const [externalSearch, setExternalSearch] = useState("");
+  const [externalResult, setExternalResult] =
+    useState<CardSearchResponse | null>(null);
+  const [externalError, setExternalError] = useState("");
+  const [isSearchingExternal, setIsSearchingExternal] = useState(false);
+  const [importAmounts, setImportAmounts] = useState<Record<string, number>>(
+    {}
+  );
+  const [collectionMessage, setCollectionMessage] = useState("");
 
   const filteredCards = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedSearch = localSearch.trim().toLowerCase();
 
     if (!normalizedSearch) {
       return sampleCards;
@@ -16,28 +27,224 @@ export default function CardsPage() {
     return sampleCards.filter((card) =>
       card.name.toLowerCase().includes(normalizedSearch)
     );
-  }, [search]);
+  }, [localSearch]);
+
+  async function handleExternalSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const searchTerm = externalSearch.trim();
+    if (searchTerm.length < 2) {
+      setExternalResult(null);
+      setExternalError("Bitte gib mindestens zwei Zeichen ein.");
+      return;
+    }
+
+    setIsSearchingExternal(true);
+    setExternalError("");
+
+    try {
+      const response = await fetch(
+        `/api/cards/search?q=${encodeURIComponent(searchTerm)}`
+      );
+      const result = (await response.json()) as
+        | CardSearchResponse
+        | { error: string };
+
+      if (!response.ok || !("cards" in result)) {
+        throw new Error(
+          "error" in result
+            ? result.error
+            : "Die Kartendaten konnten gerade nicht geladen werden."
+        );
+      }
+
+      setExternalResult(result);
+    } catch (error) {
+      setExternalResult(null);
+      setExternalError(
+        error instanceof Error
+          ? error.message
+          : "Die Kartendaten konnten gerade nicht geladen werden."
+      );
+    } finally {
+      setIsSearchingExternal(false);
+    }
+  }
+
+  function setImportAmount(cardId: string, value: string) {
+    const amount = Math.max(1, Math.min(99, Math.floor(Number(value) || 1)));
+
+    setImportAmounts((currentAmounts) => ({
+      ...currentAmounts,
+      [cardId]: amount,
+    }));
+  }
+
+  function handleAddToCollection(card: Card) {
+    const amount = importAmounts[card.id] ?? 1;
+
+    addCardToCollection(card, amount);
+    setCollectionMessage(
+      `${amount}× ${card.name} wurde zur Sammlung hinzugefügt.`
+    );
+  }
 
   return (
     <section className="space-y-6">
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-slate-900">Karten</h1>
         <p className="mt-2 text-slate-600">
-          Hier siehst du deine lokalen Testkarten fuer Version 1.
+          Suche echte Pokémon-TCG-Karten und prüfe später, welche davon in
+          deiner Sammlung liegen.
+        </p>
+
+        <form className="mt-4" onSubmit={handleExternalSearch}>
+          <label
+            htmlFor="external-card-search"
+            className="mb-2 block text-sm font-medium text-slate-700"
+          >
+            Echte Karten suchen
+          </label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              id="external-card-search"
+              type="search"
+              value={externalSearch}
+              onChange={(event) => setExternalSearch(event.target.value)}
+              placeholder="Zum Beispiel: Charizard ex"
+              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
+            />
+            <button
+              type="submit"
+              disabled={isSearchingExternal}
+              className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSearchingExternal ? "Suche läuft …" : "Suchen"}
+            </button>
+          </div>
+        </form>
+
+        <p className="mt-3 text-sm text-slate-500" aria-live="polite">
+          {externalError
+            ? externalError
+            : externalResult
+              ? `${externalResult.totalCount} Treffer gefunden. Es werden maximal 20 angezeigt.`
+              : "Die Suche nutzt die aktuelle Pokémon-TCG-Kartendatenbank."}
+        </p>
+      </div>
+
+      {externalResult && externalResult.cards.length === 0 ? (
+        <div className="rounded-xl border bg-white p-6 text-sm text-slate-600 shadow-sm">
+          Keine echten Karten gefunden.
+        </div>
+      ) : null}
+
+      {externalResult && externalResult.cards.length > 0 ? (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Ergebnisse aus der Kartendatenbank
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {externalResult.cards.map((card) => (
+              <article
+                key={card.id}
+                className="rounded-xl border bg-white p-5 shadow-sm"
+              >
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {card.name}
+                </h3>
+                <div className="mt-3 space-y-1 text-sm text-slate-600">
+                  <p>
+                    <span className="font-medium text-slate-800">Typ:</span>{" "}
+                    {card.supertype}
+                  </p>
+                  {card.subtype ? (
+                    <p>
+                      <span className="font-medium text-slate-800">
+                        Untertyp:
+                      </span>{" "}
+                      {card.subtype}
+                    </p>
+                  ) : null}
+                  {typeof card.hp === "number" ? (
+                    <p>
+                      <span className="font-medium text-slate-800">HP:</span>{" "}
+                      {card.hp}
+                    </p>
+                  ) : null}
+                  {card.setName ? (
+                    <p>
+                      <span className="font-medium text-slate-800">Set:</span>{" "}
+                      {card.setName}
+                      {card.cardNumber ? ` · Nr. ${card.cardNumber}` : ""}
+                    </p>
+                  ) : null}
+                  <p>
+                    <span className="font-medium text-slate-800">
+                      Standard-legal:
+                    </span>{" "}
+                    {card.legalStandard ? "Ja" : "Nein"}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-end gap-2">
+                  <label
+                    htmlFor={`collection-amount-${card.id}`}
+                    className="flex-1 text-sm font-medium text-slate-700"
+                  >
+                    Anzahl
+                    <input
+                      id={`collection-amount-${card.id}`}
+                      type="number"
+                      min="1"
+                      max="99"
+                      value={importAmounts[card.id] ?? 1}
+                      onChange={(event) =>
+                        setImportAmount(card.id, event.target.value)
+                      }
+                      className="mt-1 w-full rounded border px-2 py-1"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleAddToCollection(card)}
+                    className="rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    Zur Sammlung
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {collectionMessage ? (
+        <p aria-live="polite" className="text-sm text-green-700">
+          {collectionMessage}
+        </p>
+      ) : null}
+
+      <div className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">
+          Lokale Testkarten
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Diese Karten bleiben für die vorhandenen Version-1-Funktionen
+          unverändert verfügbar.
         </p>
 
         <div className="mt-4">
           <label
-            htmlFor="card-search"
+            htmlFor="local-card-search"
             className="mb-2 block text-sm font-medium text-slate-700"
           >
-            Karten suchen
+            Testkarten durchsuchen
           </label>
           <input
-            id="card-search"
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            id="local-card-search"
+            type="search"
+            value={localSearch}
+            onChange={(event) => setLocalSearch(event.target.value)}
             placeholder="Zum Beispiel: Pikachu"
             className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
           />
@@ -46,7 +253,7 @@ export default function CardsPage() {
 
       {filteredCards.length === 0 ? (
         <div className="rounded-xl border bg-white p-6 text-sm text-slate-600 shadow-sm">
-          Keine Karten gefunden.
+          Keine lokalen Testkarten gefunden.
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -55,9 +262,9 @@ export default function CardsPage() {
               key={card.id}
               className="rounded-xl border bg-white p-5 shadow-sm"
             >
-              <h2 className="text-lg font-semibold text-slate-900">
+              <h3 className="text-lg font-semibold text-slate-900">
                 {card.name}
-              </h2>
+              </h3>
 
               <div className="mt-3 space-y-1 text-sm text-slate-600">
                 <p>
