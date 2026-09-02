@@ -33,6 +33,18 @@ const deckPreviewSections: Array<{
   { supertype: "Energy", label: "Energie" },
 ];
 
+const energyTypeLabels: Record<string, string> = {
+  Fire: "Feuer",
+  Water: "Wasser",
+  Grass: "Pflanze",
+  Lightning: "Elektro",
+  Psychic: "Psycho",
+  Fighting: "Kampf",
+  Darkness: "Finsternis",
+  Metal: "Metall",
+  Dragon: "Drache",
+};
+
 function createDeckId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -407,6 +419,29 @@ export default function DeckBuilderClient() {
       );
   }, [selectedCards]);
 
+  const missingEnergyTypeWarnings = useMemo(() => {
+    const pokemonTypes = new Set(
+      selectedCards
+        .filter((card) => card.supertype === "Pokemon")
+        .flatMap((card) => card.types ?? [])
+        .filter((type) => type !== "Colorless")
+    );
+    const energyTypes = new Set(
+      selectedCards
+        .filter((card) => card.supertype === "Energy" && card.isBasicEnergy)
+        .flatMap((card) => card.types ?? [])
+    );
+
+    return Array.from(pokemonTypes)
+      .filter((type) => !energyTypes.has(type))
+      .map(
+        (type) =>
+          "Für " +
+          (energyTypeLabels[type] ?? type) +
+          "-Pokémon fehlt eine passende Basis-Energie."
+      );
+  }, [selectedCards]);
+
   function handleSaveDeck() {
     const finalDeckId = deckId ?? createDeckId();
     const now = new Date().toISOString();
@@ -693,6 +728,19 @@ export default function DeckBuilderClient() {
                 </h3>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-900">
                   {evolutionWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {missingEnergyTypeWarnings.length > 0 ? (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+                <h3 className="font-semibold text-amber-900">
+                  Energie-Hinweise
+                </h3>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-900">
+                  {missingEnergyTypeWarnings.map((warning) => (
                     <li key={warning}>{warning}</li>
                   ))}
                 </ul>

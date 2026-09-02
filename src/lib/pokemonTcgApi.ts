@@ -8,6 +8,7 @@ type PokemonTcgApiCard = {
   subtypes?: string[];
   hp?: string;
   evolvesFrom?: string;
+  types?: string[];
   legalities?: {
     standard?: string;
   };
@@ -34,6 +35,7 @@ const CARD_FIELDS = [
   "subtypes",
   "hp",
   "evolvesFrom",
+  "types",
   "legalities",
   "set",
   "number",
@@ -50,6 +52,7 @@ function toPokeDeckCard(card: PokemonTcgApiCard): Card {
     subtype: subtypes.join(", ") || undefined,
     hp: card.hp ? Number(card.hp) || undefined : undefined,
     evolvesFrom: card.evolvesFrom,
+    types: card.types,
     isBasicPokemon:
       card.supertype === "Pokémon" && subtypes.includes("Basic"),
     isBasicEnergy:

@@ -5,6 +5,7 @@ export type Card = {
     subtype?: string;
     hp?: number;
     evolvesFrom?: string;
+    types?: string[];
     isBasicPokemon: boolean;
     isBasicEnergy: boolean;
     legalStandard: boolean;
