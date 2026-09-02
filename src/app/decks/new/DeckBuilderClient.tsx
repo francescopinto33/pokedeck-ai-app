@@ -58,12 +58,14 @@ export default function DeckBuilderClient() {
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
   const [isDraftDirty, setIsDraftDirty] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [draftMessage, setDraftMessage] = useState("");
   const [isDiscardConfirmationVisible, setIsDiscardConfirmationVisible] =
     useState(false);
 
   useEffect(() => {
     setCollection(getCollection());
     setIsDiscardConfirmationVisible(false);
+    setDraftMessage("");
 
     const draftKey = deckIdFromUrl ? "deck-" + deckIdFromUrl : "new";
     const existingDraft = getDeckDraft(draftKey);
@@ -75,6 +77,7 @@ export default function DeckBuilderClient() {
       setDeckCards(existingDraft.cards);
       setIsDraftDirty(false);
       setHasDraft(true);
+      setDraftMessage("Entwurf lokal wiederhergestellt.");
       return;
     }
 
@@ -123,6 +126,7 @@ export default function DeckBuilderClient() {
 
     if (deckName.trim() === "" && deckCards.length === 0) {
       deleteDeckDraft(draftKey);
+      setDraftMessage("");
       return;
     }
 
@@ -133,6 +137,7 @@ export default function DeckBuilderClient() {
       createdAt,
       updatedAt: new Date().toISOString(),
     });
+    setDraftMessage("Entwurf lokal gesichert.");
   }, [createdAt, deckCards, deckId, deckIdFromUrl, deckName, isDraftDirty]);
 
   const totalCards = useMemo(() => {
@@ -204,6 +209,7 @@ export default function DeckBuilderClient() {
   function changeCardCount(cardId: string, change: number) {
     setSaveMessage("");
     setCopyMessage("");
+    setDraftMessage("");
     setIsDraftDirty(true);
     setHasDraft(true);
 
@@ -246,6 +252,7 @@ export default function DeckBuilderClient() {
     setIsDiscardConfirmationVisible(false);
     setSaveMessage("");
     setCopyMessage("");
+    setDraftMessage("");
 
     if (!deckIdFromUrl) {
       const newId = createDeckId();
@@ -337,6 +344,7 @@ export default function DeckBuilderClient() {
     setHasDraft(false);
     setIsDiscardConfirmationVisible(false);
     setSaveMessage("Deck wurde gespeichert.");
+    setDraftMessage("");
     router.push("/decks");
   }
 
@@ -352,6 +360,11 @@ export default function DeckBuilderClient() {
         <p className="mt-1 text-sm text-slate-500">
           Ungespeicherte Änderungen werden auf diesem Gerät als Entwurf gesichert.
         </p>
+        {draftMessage ? (
+          <p aria-live="polite" className="mt-1 text-sm text-green-700">
+            {draftMessage}
+          </p>
+        ) : null}
         {hasDraft && hasDraftContent ? (
           <div className="mt-3">
             {isDiscardConfirmationVisible ? (
@@ -401,6 +414,7 @@ export default function DeckBuilderClient() {
             value={deckName}
             onChange={(event) => {
               setDeckName(event.target.value);
+              setDraftMessage("");
               setIsDraftDirty(true);
               setHasDraft(true);
             }}
