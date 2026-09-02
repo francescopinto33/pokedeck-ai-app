@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getAvailableCards } from "@/lib/availableCards";
+import {
+  createCollectionCsv,
+  mergeCollectionEntries,
+  parseCollectionCsv,
+} from "@/lib/collectionCsv";
 import { getCollection, saveCollection } from "@/lib/storage";
 import type { Card, CollectionEntry } from "@/types";
 
@@ -10,6 +15,12 @@ export default function CollectionPage() {
   const [allCards, setAllCards] = useState<Card[]>([]);
   const [search, setSearch] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [importPreview, setImportPreview] = useState<{
+    entries: CollectionEntry[];
+    errors: string[];
+    rowCount: number;
+  } | null>(null);
+  const [importMessage, setImportMessage] = useState("");
 
   useEffect(() => {
     setEntries(getCollection());
@@ -53,6 +64,66 @@ export default function CollectionPage() {
   function handleSaveCollection() {
     saveCollection(entries);
     setSaveMessage("Sammlung wurde gespeichert.");
+  }
+
+  async function handleCsvFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    setImportPreview(null);
+    setImportMessage("");
+
+    if (!file) {
+      return;
+    }
+
+    if (file.size > 1_000_000) {
+      setImportMessage("Die CSV-Datei darf höchstens 1 MB groß sein.");
+      return;
+    }
+
+    const content = await file.text();
+    const preview = parseCollectionCsv(
+      content,
+      new Set(allCards.map((card) => card.id))
+    );
+
+    setImportPreview(preview);
+    if (preview.entries.length === 0) {
+      setImportMessage("Keine gültigen Karten zum Übernehmen gefunden.");
+    }
+  }
+
+  function handleConfirmImport() {
+    if (!importPreview || importPreview.entries.length === 0) {
+      return;
+    }
+
+    const updatedEntries = mergeCollectionEntries(
+      entries,
+      importPreview.entries
+    );
+
+    setEntries(updatedEntries);
+    saveCollection(updatedEntries);
+    setSaveMessage("");
+    setImportMessage(
+      String(importPreview.entries.length) +
+        " Kartenarten wurden zur Sammlung hinzugefügt."
+    );
+    setImportPreview(null);
+  }
+
+  function handleExportCollection() {
+    const csv = createCollectionCsv(entries);
+    const file = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const downloadUrl = URL.createObjectURL(file);
+    const link = document.createElement("a");
+
+    link.href = downloadUrl;
+    link.download = "pokedeck-ai-sammlung.csv";
+    link.click();
+    URL.revokeObjectURL(downloadUrl);
+    setImportMessage("CSV-Datei wurde heruntergeladen.");
   }
 
   const filteredCards = useMemo(() => {
@@ -111,6 +182,74 @@ export default function CollectionPage() {
         {saveMessage ? (
           <p className="mt-3 text-sm text-green-700">{saveMessage}</p>
         ) : null}
+
+        <div className="mt-5 rounded-lg border bg-slate-50 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Sammlung per CSV übertragen
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Erwartet werden die Spalten <code>cardId</code> und{" "}
+                <code>owned</code>. Unbekannte Karten werden vor dem Import
+                angezeigt und nicht übernommen.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportCollection}
+              className="rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+            >
+              CSV herunterladen
+            </button>
+          </div>
+
+          <label
+            htmlFor="collection-csv-import"
+            className="mt-4 block text-sm font-medium text-slate-700"
+          >
+            CSV-Datei auswählen
+          </label>
+          <input
+            id="collection-csv-import"
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleCsvFile}
+            className="mt-2 block w-full text-sm text-slate-700"
+          />
+
+          {importPreview ? (
+            <div className="mt-4 space-y-2 text-sm text-slate-700">
+              <p>
+                {importPreview.rowCount} Zeilen geprüft,{" "}
+                {importPreview.entries.length} Kartenarten können übernommen
+                werden.
+              </p>
+              {importPreview.errors.length > 0 ? (
+                <ul className="list-disc space-y-1 pl-5 text-amber-700">
+                  {importPreview.errors.slice(0, 5).map((error) => (
+                    <li key={error}>{error}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {importPreview.entries.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={handleConfirmImport}
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                >
+                  {importPreview.entries.length} Kartenarten hinzufügen
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {importMessage ? (
+            <p aria-live="polite" className="mt-3 text-sm text-green-700">
+              {importMessage}
+            </p>
+          ) : null}
+        </div>
 
         <div className="mt-4 space-y-3">
           {filteredCards.length === 0 ? (
