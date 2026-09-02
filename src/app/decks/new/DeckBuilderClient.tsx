@@ -147,6 +147,59 @@ export default function DeckBuilderClient() {
   const totalCards = useMemo(() => {
     return deckCards.reduce((sum, entry) => sum + entry.count, 0);
   }, [deckCards]);
+
+  const deckComposition = useMemo(() => {
+    const counts: Record<Card["supertype"], number> = {
+      Pokemon: 0,
+      Trainer: 0,
+      Energy: 0,
+    };
+
+    for (const entry of deckCards) {
+      const card = allCards.find((item) => item.id === entry.cardId);
+
+      if (card) {
+        counts[card.supertype] += entry.count;
+      }
+    }
+
+    return deckPreviewSections.map((section) => ({
+      ...section,
+      count: counts[section.supertype],
+    }));
+  }, [allCards, deckCards]);
+
+  const deckCompositionHints = useMemo(() => {
+    if (totalCards === 0) {
+      return ["Füge Karten hinzu, um die Zusammensetzung zu sehen."];
+    }
+
+    const getCount = (supertype: Card["supertype"]) =>
+      deckComposition.find((section) => section.supertype === supertype)
+        ?.count ?? 0;
+    const pokemon = getCount("Pokemon");
+    const trainer = getCount("Trainer");
+    const energy = getCount("Energy");
+    const hints: string[] = [];
+
+    if (totalCards >= 20 && trainer < 10) {
+      hints.push("Wenige Trainer: Such- und Unterstützerkarten können die Konsistenz verbessern.");
+    }
+
+    if (totalCards >= 20 && energy === 0) {
+      hints.push("Keine Energie enthalten: Prüfe, ob dein Deck Energie benötigt.");
+    }
+
+    if (totalCards >= 20 && pokemon > totalCards / 2) {
+      hints.push("Viele Pokémon: Prüfe, ob genug Platz für Trainer und Energie bleibt.");
+    }
+
+    if (hints.length === 0) {
+      hints.push("Die Verteilung zeigt keine offensichtliche Unausgewogenheit.");
+    }
+
+    return hints;
+  }, [deckComposition, totalCards]);
   const hasDraftContent = deckName.trim() !== "" || deckCards.length > 0;
 
   const deckSizeMessage =
@@ -586,6 +639,33 @@ export default function DeckBuilderClient() {
                 Gesamtzahl Karten: {totalCards} / 60
               </p>
               <p className="mt-1 text-sm text-slate-600">{deckSizeMessage}</p>
+            </div>
+
+            <div className="mt-4 rounded-lg border bg-slate-50 p-3">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Deck-Zusammensetzung
+              </h3>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                {deckComposition.map((section) => (
+                  <div key={section.supertype} className="rounded bg-white p-2">
+                    <p className="text-xs text-slate-600">{section.label}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {section.count}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {totalCards > 0
+                        ? Math.round((section.count / totalCards) * 100)
+                        : 0}
+                      %
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                {deckCompositionHints.map((hint) => (
+                  <li key={hint}>{hint}</li>
+                ))}
+              </ul>
             </div>
 
             <div className="mt-4 rounded-lg border bg-slate-50 p-3 text-sm">
