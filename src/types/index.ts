@@ -4,6 +4,7 @@ export type Card = {
     supertype: "Pokemon" | "Trainer" | "Energy";
     subtype?: string;
     hp?: number;
+    evolvesFrom?: string;
     isBasicPokemon: boolean;
     isBasicEnergy: boolean;
     legalStandard: boolean;

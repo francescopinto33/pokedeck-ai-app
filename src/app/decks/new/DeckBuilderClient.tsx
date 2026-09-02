@@ -389,6 +389,24 @@ export default function DeckBuilderClient() {
     }));
   }, [selectedCards]);
 
+  const evolutionWarnings = useMemo(() => {
+    return selectedCards
+      .filter(
+        (card) =>
+          card.evolvesFrom &&
+          !selectedCards.some(
+            (selectedCard) => selectedCard.name === card.evolvesFrom
+          )
+      )
+      .map(
+        (card) =>
+          card.name +
+          " entwickelt sich aus " +
+          card.evolvesFrom +
+          ", aber diese Vorstufe fehlt im Deck."
+      );
+  }, [selectedCards]);
+
   function handleSaveDeck() {
     const finalDeckId = deckId ?? createDeckId();
     const now = new Date().toISOString();
@@ -667,6 +685,19 @@ export default function DeckBuilderClient() {
                 ))}
               </ul>
             </div>
+
+            {evolutionWarnings.length > 0 ? (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+                <h3 className="font-semibold text-amber-900">
+                  Entwicklungs-Hinweise
+                </h3>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-900">
+                  {evolutionWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             <div className="mt-4 rounded-lg border bg-slate-50 p-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
