@@ -53,6 +53,17 @@ function createDeckId() {
   return `deck-${Date.now()}`;
 }
 
+function getOpeningBasicPokemonChance(basicPokemon: number, totalCards: number) {
+  let chanceWithoutBasicPokemon = 1;
+
+  for (let cardIndex = 0; cardIndex < 7; cardIndex += 1) {
+    chanceWithoutBasicPokemon *=
+      (totalCards - basicPokemon - cardIndex) / (totalCards - cardIndex);
+  }
+
+  return Math.round((1 - chanceWithoutBasicPokemon) * 100);
+}
+
 export default function DeckBuilderClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -442,6 +453,25 @@ export default function DeckBuilderClient() {
       );
   }, [selectedCards]);
 
+  const startHandHint = useMemo(() => {
+    if (totalCards !== 60) {
+      return null;
+    }
+
+    const basicPokemonCount = selectedCards
+      .filter((card) => card.isBasicPokemon)
+      .reduce((sum, card) => sum + card.count, 0);
+
+    if (basicPokemonCount === 0 || basicPokemonCount >= 6) {
+      return null;
+    }
+
+    return {
+      basicPokemonCount,
+      chance: getOpeningBasicPokemonChance(basicPokemonCount, totalCards),
+    };
+  }, [selectedCards, totalCards]);
+
   function handleSaveDeck() {
     const finalDeckId = deckId ?? createDeckId();
     const now = new Date().toISOString();
@@ -720,6 +750,20 @@ export default function DeckBuilderClient() {
                 ))}
               </ul>
             </div>
+
+            {startHandHint ? (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+                <h3 className="font-semibold text-amber-900">
+                  Starthand-Hinweis
+                </h3>
+                <p className="mt-2 text-amber-900">
+                  Mit {startHandHint.basicPokemonCount} Basis-Pokémon liegt die
+                  Chance auf mindestens eines in den ersten sieben Karten bei
+                  etwa {startHandHint.chance} %. Mehr Basis-Pokémon können
+                  Mulligans seltener machen.
+                </p>
+              </div>
+            ) : null}
 
             {evolutionWarnings.length > 0 ? (
               <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
