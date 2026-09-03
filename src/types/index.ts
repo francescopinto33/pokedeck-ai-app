@@ -1,4 +1,23 @@
-export type Card = {
+export type CardAttack = {
+    name: string;
+    cost: string[];
+    damage?: string;
+    text?: string;
+    convertedEnergyCost?: number;
+  };
+
+  export type CardAbility = {
+    name: string;
+    text?: string;
+    type?: string;
+  };
+
+  export type CardTypeModifier = {
+    type: string;
+    value?: string;
+  };
+
+  export type Card = {
     id: string;
     name: string;
     supertype: "Pokemon" | "Trainer" | "Energy";
@@ -11,6 +30,13 @@ export type Card = {
     legalStandard: boolean;
     setName?: string;
     cardNumber?: string;
+    attacks?: CardAttack[];
+    abilities?: CardAbility[];
+    weaknesses?: CardTypeModifier[];
+    resistances?: CardTypeModifier[];
+    retreatCost?: string[];
+    regulationMark?: string;
+    rarity?: string;
     imageSmall?: string;
     imageLarge?: string;
   };

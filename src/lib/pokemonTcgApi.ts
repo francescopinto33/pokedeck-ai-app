@@ -1,5 +1,11 @@
 import { get } from "node:https";
-import type { Card, CardSearchResponse } from "@/types";
+import type {
+  Card,
+  CardAbility,
+  CardAttack,
+  CardSearchResponse,
+  CardTypeModifier,
+} from "@/types";
 
 type PokemonTcgApiCard = {
   id: string;
@@ -9,6 +15,13 @@ type PokemonTcgApiCard = {
   hp?: string;
   evolvesFrom?: string;
   types?: string[];
+  attacks?: CardAttack[];
+  abilities?: CardAbility[];
+  weaknesses?: CardTypeModifier[];
+  resistances?: CardTypeModifier[];
+  retreatCost?: string[];
+  regulationMark?: string;
+  rarity?: string;
   legalities?: {
     standard?: string;
   };
@@ -36,6 +49,13 @@ const CARD_FIELDS = [
   "hp",
   "evolvesFrom",
   "types",
+  "attacks",
+  "abilities",
+  "weaknesses",
+  "resistances",
+  "retreatCost",
+  "regulationMark",
+  "rarity",
   "legalities",
   "set",
   "number",
@@ -53,6 +73,13 @@ function toPokeDeckCard(card: PokemonTcgApiCard): Card {
     hp: card.hp ? Number(card.hp) || undefined : undefined,
     evolvesFrom: card.evolvesFrom,
     types: card.types,
+    attacks: card.attacks,
+    abilities: card.abilities,
+    weaknesses: card.weaknesses,
+    resistances: card.resistances,
+    retreatCost: card.retreatCost,
+    regulationMark: card.regulationMark,
+    rarity: card.rarity,
     isBasicPokemon:
       card.supertype === "Pokémon" && subtypes.includes("Basic"),
     isBasicEnergy:

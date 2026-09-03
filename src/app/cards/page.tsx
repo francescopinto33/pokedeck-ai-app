@@ -170,6 +170,14 @@ export default function CardsPage() {
                     <span className="font-medium text-slate-800">Typ:</span>{" "}
                     {card.supertype}
                   </p>
+                  {card.types?.length ? (
+                    <p>
+                      <span className="font-medium text-slate-800">
+                        Energie-Typ:
+                      </span>{" "}
+                      {card.types.join(", ")}
+                    </p>
+                  ) : null}
                   {card.subtype ? (
                     <p>
                       <span className="font-medium text-slate-800">
@@ -197,7 +205,88 @@ export default function CardsPage() {
                     </span>{" "}
                     {card.legalStandard ? "Ja" : "Nein"}
                   </p>
+                  {card.regulationMark ? (
+                    <p>
+                      <span className="font-medium text-slate-800">
+                        Regulierungszeichen:
+                      </span>{" "}
+                      {card.regulationMark}
+                    </p>
+                  ) : null}
+                  {card.rarity ? (
+                    <p>
+                      <span className="font-medium text-slate-800">
+                        Seltenheit:
+                      </span>{" "}
+                      {card.rarity}
+                    </p>
+                  ) : null}
                 </div>
+                {card.attacks?.length ||
+                card.abilities?.length ||
+                card.weaknesses?.length ||
+                card.resistances?.length ||
+                card.retreatCost?.length ? (
+                  <details className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+                    <summary className="cursor-pointer font-medium text-slate-800">
+                      Spielwerte ansehen
+                    </summary>
+                    {card.abilities?.length ? (
+                      <div className="mt-3 space-y-2">
+                        <p className="font-medium text-slate-800">Fähigkeiten</p>
+                        {card.abilities.map((ability) => (
+                          <p key={`${ability.type ?? "Ability"}-${ability.name}`}>
+                            <span className="font-medium">{ability.name}:</span>{" "}
+                            {ability.text ?? "Keine Beschreibung vorhanden."}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                    {card.attacks?.length ? (
+                      <div className="mt-3 space-y-2">
+                        <p className="font-medium text-slate-800">Angriffe</p>
+                        {card.attacks.map((attack) => (
+                          <p key={attack.name}>
+                            <span className="font-medium">
+                              {attack.name}
+                              {attack.damage ? ` · ${attack.damage}` : ""}:
+                            </span>{" "}
+                            {attack.cost.join(" · ") || "Keine Energie"}
+                            {attack.text ? ` – ${attack.text}` : ""}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                    {card.weaknesses?.length ? (
+                      <p className="mt-3">
+                        <span className="font-medium text-slate-800">
+                          Schwäche:
+                        </span>{" "}
+                        {card.weaknesses
+                          .map((weakness) => `${weakness.type} ${weakness.value ?? ""}`.trim())
+                          .join(", ")}
+                      </p>
+                    ) : null}
+                    {card.resistances?.length ? (
+                      <p className="mt-2">
+                        <span className="font-medium text-slate-800">
+                          Resistenz:
+                        </span>{" "}
+                        {card.resistances
+                          .map((resistance) => `${resistance.type} ${resistance.value ?? ""}`.trim())
+                          .join(", ")}
+                      </p>
+                    ) : null}
+                    {card.retreatCost?.length ? (
+                      <p className="mt-2">
+                        <span className="font-medium text-slate-800">
+                          Rückzugskosten:
+                        </span>{" "}
+                        {card.retreatCost.join(" · ")}
+                      </p>
+                    ) : null}
+                  </details>
+                ) : null}
                 <div className="mt-4 flex items-end gap-2">
                   <label
                     htmlFor={`collection-amount-${card.id}`}
