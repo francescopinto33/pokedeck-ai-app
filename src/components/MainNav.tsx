@@ -36,6 +36,12 @@ export default function MainNav() {
             Neues Deck
           </Link>
           <Link
+            href="/suggestions"
+            className="rounded border px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            Vorschläge
+          </Link>
+          <Link
             href="/collection"
             className="rounded border px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
           >
