@@ -60,6 +60,17 @@ export type CardAttack = {
     items: CardListResolution[];
     errors: string[];
   };
+
+  export type CardPhotoRecognition = {
+    name: string;
+    amount: number;
+    confidence: "high" | "medium" | "low";
+  };
+
+  export type CardPhotoRecognitionResponse = {
+    cards: CardPhotoRecognition[];
+    warnings: string[];
+  };
   
   export type DeckCard = {
     cardId: string;
