@@ -8,6 +8,17 @@ import { validateDeck } from "@/lib/validateDeck";
 import { compareDeckToCollection } from "@/lib/compareDeckToCollection";
 import type { Card, CollectionEntry, Deck } from "@/types";
 
+function getOpeningBasicPokemonChance(basicPokemon: number, totalCards: number) {
+  let chanceWithoutBasicPokemon = 1;
+
+  for (let cardIndex = 0; cardIndex < 7; cardIndex += 1) {
+    chanceWithoutBasicPokemon *=
+      (totalCards - basicPokemon - cardIndex) / (totalCards - cardIndex);
+  }
+
+  return Math.round((1 - chanceWithoutBasicPokemon) * 100);
+}
+
 export default function DecksPage() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
@@ -67,6 +78,20 @@ export default function DecksPage() {
                     : 0,
               };
             });
+            const basicPokemonCount = deck.cards.reduce((sum, entry) => {
+              const card = allCards.find((item) => item.id === entry.cardId);
+
+              return card?.isBasicPokemon ? sum + entry.count : sum;
+            }, 0);
+            const startHandChance =
+              validation.totalCards === 60 &&
+              basicPokemonCount > 0 &&
+              basicPokemonCount < 6
+                ? getOpeningBasicPokemonChance(
+                    basicPokemonCount,
+                    validation.totalCards
+                  )
+                : null;
             const formatLabel =
               deck.format === "standard-2026"
                 ? "Standardformat 2026"
@@ -166,6 +191,20 @@ export default function DecksPage() {
                         ))}
                       </div>
                     </div>
+
+                    {startHandChance ? (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                        <h3 className="text-sm font-semibold text-amber-900">
+                          Starthand-Hinweis
+                        </h3>
+                        <p className="mt-2 text-sm text-amber-900">
+                          Mit {basicPokemonCount} Basis-Pokémon liegt die Chance
+                          auf mindestens eines in den ersten sieben Karten bei
+                          etwa {startHandChance} %. Mehr Basis-Pokémon können
+                          Mulligans seltener machen.
+                        </p>
+                      </div>
+                    ) : null}
 
                     <div className="rounded-lg border bg-slate-50 p-4">
                       <h3 className="text-sm font-semibold text-slate-900">
