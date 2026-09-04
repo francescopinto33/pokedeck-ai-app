@@ -7,6 +7,7 @@ import { addCardToCollection } from "@/lib/storage";
 import type { Card, CardSearchResponse } from "@/types";
 
 type ExternalCardFilter = "All" | Card["supertype"];
+type CardSearchLanguage = "de" | "en";
 
 export default function CardsPage() {
   const [localSearch, setLocalSearch] = useState("");
@@ -15,6 +16,8 @@ export default function CardsPage() {
     useState<CardSearchResponse | null>(null);
   const [externalError, setExternalError] = useState("");
   const [isSearchingExternal, setIsSearchingExternal] = useState(false);
+  const [externalLanguage, setExternalLanguage] =
+    useState<CardSearchLanguage>("de");
   const [externalCardFilter, setExternalCardFilter] =
     useState<ExternalCardFilter>("All");
   const [showStandardOnly, setShowStandardOnly] = useState(true);
@@ -69,6 +72,7 @@ export default function CardsPage() {
       const params = new URLSearchParams({
         q: searchTerm,
         standardOnly: String(showStandardOnly),
+        language: externalLanguage,
       });
       const response = await fetch(`/api/cards/search?${params.toString()}`);
       const result = (await response.json()) as
@@ -136,7 +140,11 @@ export default function CardsPage() {
               type="search"
               value={externalSearch}
               onChange={(event) => setExternalSearch(event.target.value)}
-              placeholder="Zum Beispiel: Charizard ex"
+              placeholder={
+                externalLanguage === "de"
+                  ? "Zum Beispiel: Glurak ex"
+                  : "Zum Beispiel: Charizard ex"
+              }
               className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
             />
             <button
@@ -148,6 +156,19 @@ export default function CardsPage() {
             </button>
           </div>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2">
+              Kartensprache
+              <select
+                value={externalLanguage}
+                onChange={(event) =>
+                  setExternalLanguage(event.target.value as CardSearchLanguage)
+                }
+                className="rounded border px-2 py-1"
+              >
+                <option value="de">Deutsch</option>
+                <option value="en">Englisch</option>
+              </select>
+            </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -188,7 +209,7 @@ export default function CardsPage() {
             ? externalError
             : externalResult
               ? `${externalResult.totalCount} Treffer gefunden. ${filteredExternalCards.length} werden mit den gewählten Filtern angezeigt.`
-              : "Standardformat 2026 ist vorausgewählt. Die Filter werden bei der nächsten Suche angewendet."}
+              : "Deutsche Karten sind vorausgewählt. Standardformat 2026 und alle Filter werden bei der nächsten Suche angewendet."}
         </p>
       </div>
 
