@@ -82,6 +82,9 @@ export default function CardsPage() {
   const [cardListContent, setCardListContent] = useState("");
   const [cardListResult, setCardListResult] =
     useState<CardListResolutionResponse | null>(null);
+  const [cardListChoices, setCardListChoices] = useState<Record<string, string>>(
+    {}
+  );
   const [cardListError, setCardListError] = useState("");
   const [isResolvingCardList, setIsResolvingCardList] = useState(false);
   const [collectionMessage, setCollectionMessage] = useState("");
@@ -113,6 +116,21 @@ export default function CardsPage() {
       return matchesCardType && matchesBasicPokemon;
     });
   }, [externalCardFilter, externalResult, showBasicPokemonOnly]);
+
+  const selectedCardListItems = useMemo(() => {
+    if (!cardListResult) {
+      return [];
+    }
+
+    return cardListResult.items.flatMap((item, index) => {
+      const selectedCardId =
+        cardListChoices[String(index)] ??
+        (item.status === "matched" ? item.candidates[0]?.id : undefined);
+      const card = item.candidates.find((candidate) => candidate.id === selectedCardId);
+
+      return card ? [{ card, amount: item.amount }] : [];
+    });
+  }, [cardListChoices, cardListResult]);
 
   async function fetchExternalCards(page: number): Promise<CardSearchResponse> {
     const params = new URLSearchParams({
@@ -207,6 +225,7 @@ export default function CardsPage() {
     setIsResolvingCardList(true);
     setCardListError("");
     setCardListResult(null);
+    setCardListChoices({});
 
     try {
       const response = await fetch("/api/cards/resolve-list", {
@@ -230,6 +249,15 @@ export default function CardsPage() {
         );
       }
 
+      const initialChoices: Record<string, string> = {};
+
+      result.items.forEach((item, index) => {
+        if (item.status === "matched" && item.candidates[0]) {
+          initialChoices[String(index)] = item.candidates[0].id;
+        }
+      });
+
+      setCardListChoices(initialChoices);
       setCardListResult(result);
     } catch (error) {
       setCardListError(
@@ -313,6 +341,24 @@ export default function CardsPage() {
     setSelectedCardIds(new Set());
     setCollectionMessage(
       `${selectedCards.length} ${selectedCards.length === 1 ? "Kartenart" : "Kartenarten"} mit insgesamt ${totalCopies} ${totalCopies === 1 ? "Exemplar" : "Exemplaren"} wurden zur Sammlung hinzugefügt.`
+    );
+  }
+
+  function handleAddCardListToCollection() {
+    if (selectedCardListItems.length === 0) {
+      return;
+    }
+
+    const totalCopies = selectedCardListItems.reduce((sum, item) => {
+      addCardToCollection(item.card, item.amount);
+      return sum + item.amount;
+    }, 0);
+
+    setCardListContent("");
+    setCardListChoices({});
+    setCardListResult(null);
+    setCollectionMessage(
+      `${selectedCardListItems.length} ${selectedCardListItems.length === 1 ? "Kartenart" : "Kartenarten"} mit insgesamt ${totalCopies} ${totalCopies === 1 ? "Exemplar" : "Exemplaren"} wurden aus der Liste zur Sammlung hinzugefügt.`
     );
   }
 
@@ -456,13 +502,36 @@ export default function CardsPage() {
               {cardListResult.items.length} Kartenarten geprüft.
             </p>
             <ul className="mt-3 space-y-2">
-              {cardListResult.items.map((item) => (
+              {cardListResult.items.map((item, index) => (
                 <li key={item.name}>
                   <span className="font-medium">{item.amount}× {item.name}:</span>{" "}
                   {getCardListResolutionLabel(item.status)}
                   {item.status === "matched" && item.candidates[0]
                     ? ` · ${item.candidates[0].setName ?? "Set unbekannt"}`
                     : ""}
+                  {item.status === "needsChoice" ? (
+                    <label className="mt-2 block">
+                      <span className="sr-only">Druck für {item.name} auswählen</span>
+                      <select
+                        value={cardListChoices[String(index)] ?? ""}
+                        onChange={(event) =>
+                          setCardListChoices((currentChoices) => ({
+                            ...currentChoices,
+                            [String(index)]: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded border bg-white px-2 py-1"
+                      >
+                        <option value="">Passenden Druck auswählen</option>
+                        {item.candidates.map((card) => (
+                          <option key={card.id} value={card.id}>
+                            {card.name} · {card.setName ?? "Set unbekannt"}
+                            {card.cardNumber ? ` · Nr. ${card.cardNumber}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -472,6 +541,17 @@ export default function CardsPage() {
                   <li key={error}>{error}</li>
                 ))}
               </ul>
+            ) : null}
+            {selectedCardListItems.length > 0 ? (
+              <button
+                type="button"
+                onClick={handleAddCardListToCollection}
+                className="mt-4 rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800"
+              >
+                {selectedCardListItems.length} zugeordnete{" "}
+                {selectedCardListItems.length === 1 ? "Kartenart" : "Kartenarten"}{" "}
+                zur Sammlung hinzufügen
+              </button>
             ) : null}
           </div>
         ) : null}
