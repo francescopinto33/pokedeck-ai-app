@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { sampleCards } from "@/data/sampleCards";
 import { addCardToCollection } from "@/lib/storage";
+import { validateCardPhotoFiles } from "@/lib/cardPhotoImport";
 import type {
   Card,
   CardListResolutionResponse,
@@ -13,6 +14,11 @@ import type {
 
 type ExternalCardFilter = "All" | Card["supertype"];
 type CardSearchLanguage = "de" | "en";
+
+type SelectedCardPhoto = {
+  file: File;
+  previewUrl: string;
+};
 
 const germanCardLabels: Record<string, string> = {
   Pokemon: "Pokémon",
@@ -87,7 +93,16 @@ export default function CardsPage() {
   );
   const [cardListError, setCardListError] = useState("");
   const [isResolvingCardList, setIsResolvingCardList] = useState(false);
+  const [cardPhotos, setCardPhotos] = useState<SelectedCardPhoto[]>([]);
+  const [cardPhotoError, setCardPhotoError] = useState("");
+  const cardPhotosRef = useRef<SelectedCardPhoto[]>([]);
   const [collectionMessage, setCollectionMessage] = useState("");
+
+  useEffect(() => {
+    return () => {
+      cardPhotosRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+    };
+  }, []);
 
   const filteredCards = useMemo(() => {
     const normalizedSearch = localSearch.trim().toLowerCase();
@@ -383,6 +398,41 @@ export default function CardsPage() {
     );
   }
 
+  function replaceCardPhotos(files: File[]) {
+    const errors = validateCardPhotoFiles(files);
+
+    if (errors.length > 0) {
+      setCardPhotoError(errors[0]);
+      return;
+    }
+
+    cardPhotosRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+    const nextPhotos = files.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    cardPhotosRef.current = nextPhotos;
+    setCardPhotos(nextPhotos);
+    setCardPhotoError("");
+  }
+
+  function removeCardPhoto(previewUrl: string) {
+    const removedPhoto = cardPhotosRef.current.find(
+      (photo) => photo.previewUrl === previewUrl
+    );
+
+    if (removedPhoto) {
+      URL.revokeObjectURL(removedPhoto.previewUrl);
+    }
+
+    const nextPhotos = cardPhotosRef.current.filter(
+      (photo) => photo.previewUrl !== previewUrl
+    );
+    cardPhotosRef.current = nextPhotos;
+    setCardPhotos(nextPhotos);
+  }
+
   return (
     <section className="space-y-6">
       <div className="rounded-xl border bg-white p-6 shadow-sm">
@@ -584,6 +634,65 @@ export default function CardsPage() {
               </button>
             ) : null}
           </div>
+        ) : null}
+      </div>
+
+      <div className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">
+          Kartenfotos erkennen
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Wähle bis zu drei gut lesbare Fotos von Kartenfronten aus. Vor einer
+          Übernahme werden alle Treffer später von dir geprüft.
+        </p>
+        <label className="mt-4 block">
+          <span className="mb-2 block text-sm font-medium text-slate-700">
+            Kartenfotos auswählen
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={(event) => {
+              replaceCardPhotos(Array.from(event.target.files ?? []));
+              event.target.value = "";
+            }}
+            className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:font-medium file:text-slate-800 hover:file:bg-slate-200"
+          />
+        </label>
+        <p className="mt-2 text-xs text-slate-500">
+          JPG, PNG oder WebP · maximal 5 MB je Bild
+        </p>
+        {cardPhotoError ? (
+          <p aria-live="polite" className="mt-3 text-sm text-red-700">
+            {cardPhotoError}
+          </p>
+        ) : null}
+        {cardPhotos.length > 0 ? (
+          <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+            {cardPhotos.map((photo) => (
+              <li key={photo.previewUrl} className="rounded-lg border p-2">
+                <Image
+                  src={photo.previewUrl}
+                  alt={`Vorschau: ${photo.file.name}`}
+                  width={160}
+                  height={224}
+                  unoptimized
+                  className="h-40 w-full rounded object-contain"
+                />
+                <p className="mt-2 truncate text-sm font-medium text-slate-800">
+                  {photo.file.name}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => removeCardPhoto(photo.previewUrl)}
+                  className="mt-2 text-sm font-medium text-slate-700 underline hover:text-slate-900"
+                >
+                  Entfernen
+                </button>
+              </li>
+            ))}
+          </ul>
         ) : null}
       </div>
 
