@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { getAvailableCards } from "@/lib/availableCards";
 import {
   createCollectionCsv,
@@ -265,12 +266,31 @@ export default function CollectionPage() {
                   key={card.id}
                   className="flex items-center justify-between rounded-lg border p-3"
                 >
-                  <div>
-                    <p className="font-medium text-slate-900">{card.name}</p>
-                    <p className="text-sm text-slate-600">
-                      {card.supertype}
-                      {card.subtype ? ` • ${card.subtype}` : ""}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    {card.imageSmall ? (
+                      <Image
+                        src={card.imageSmall}
+                        alt={card.name + " – " + (card.setName ?? "Pokémon-Karte")}
+                        width={63}
+                        height={88}
+                        className="h-auto w-16 shrink-0 rounded shadow-sm"
+                      />
+                    ) : null}
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-slate-900">
+                        {card.name}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        {card.supertype}
+                        {card.subtype ? ` • ${card.subtype}` : ""}
+                      </p>
+                      {card.setName ? (
+                        <p className="text-sm text-slate-500">
+                          {card.setName}
+                          {card.cardNumber ? ` · Nr. ${card.cardNumber}` : ""}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2">
