@@ -8,7 +8,7 @@ import {
   mergeCollectionEntries,
   parseCollectionCsv,
 } from "@/lib/collectionCsv";
-import { getCollection, saveCollection } from "@/lib/storage";
+import { getCollection, getImportedCards, saveCollection } from "@/lib/storage";
 import type { Card, CollectionEntry } from "@/types";
 
 type CollectionCardFilter = "All" | Card["supertype"];
@@ -156,7 +156,7 @@ export default function CollectionPage() {
   }
 
   function handleExportCollection() {
-    const csv = createCollectionCsv(entries);
+    const csv = createCollectionCsv(entries, getImportedCards());
     const file = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const downloadUrl = URL.createObjectURL(file);
     const link = document.createElement("a");
