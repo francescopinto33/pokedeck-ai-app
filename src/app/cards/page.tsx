@@ -29,6 +29,23 @@ function formatGermanCardLabel(value: string) {
   return germanCardLabels[value] ?? value;
 }
 
+function mergeCardSearchPages(
+  currentResult: CardSearchResponse,
+  nextResult: CardSearchResponse
+): CardSearchResponse {
+  const cardsById = new Map<string, Card>();
+
+  for (const card of [...currentResult.cards, ...nextResult.cards]) {
+    cardsById.set(card.id, card);
+  }
+
+  return {
+    ...nextResult,
+    cards: Array.from(cardsById.values()),
+    totalCount: Math.max(currentResult.totalCount, nextResult.totalCount),
+  };
+}
+
 export default function CardsPage() {
   const [localSearch, setLocalSearch] = useState("");
   const [externalSearch, setExternalSearch] = useState("");
@@ -111,6 +128,7 @@ export default function CardsPage() {
 
     setIsSearchingExternal(true);
     setExternalError("");
+    setExternalResult(null);
 
     try {
       setExternalResult(await fetchExternalCards(1));
@@ -142,14 +160,7 @@ export default function CardsPage() {
           return nextResult;
         }
 
-        return {
-          ...nextResult,
-          cards: [...currentResult.cards, ...nextResult.cards],
-          totalCount: Math.max(
-            currentResult.totalCount,
-            nextResult.totalCount
-          ),
-        };
+        return mergeCardSearchPages(currentResult, nextResult);
       });
     } catch (error) {
       setExternalError(
@@ -270,7 +281,7 @@ export default function CardsPage() {
           {externalError
             ? externalError
             : externalResult
-              ? `${externalResult.totalCount} Treffer gefunden. ${filteredExternalCards.length} werden mit den gewählten Filtern angezeigt.`
+              ? `${externalResult.cards.length} Karten geladen. ${filteredExternalCards.length} werden mit den gewählten Filtern angezeigt.${externalResult.hasMore ? " Weitere Treffer können geladen werden." : ""}`
               : "Deutsche Karten sind vorausgewählt. Standardformat 2026 und alle Filter werden bei der nächsten Suche angewendet."}
         </p>
       </div>
