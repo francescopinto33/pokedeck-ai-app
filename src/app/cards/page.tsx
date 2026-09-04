@@ -9,6 +9,26 @@ import type { Card, CardSearchResponse } from "@/types";
 type ExternalCardFilter = "All" | Card["supertype"];
 type CardSearchLanguage = "de" | "en";
 
+const germanCardLabels: Record<string, string> = {
+  Pokemon: "Pokémon",
+  Trainer: "Trainer",
+  Energy: "Energie",
+  Grass: "Pflanze",
+  Fire: "Feuer",
+  Water: "Wasser",
+  Lightning: "Elektro",
+  Psychic: "Psycho",
+  Fighting: "Kampf",
+  Darkness: "Finsternis",
+  Metal: "Metall",
+  Dragon: "Drache",
+  Colorless: "Farblos",
+};
+
+function formatGermanCardLabel(value: string) {
+  return germanCardLabels[value] ?? value;
+}
+
 export default function CardsPage() {
   const [localSearch, setLocalSearch] = useState("");
   const [externalSearch, setExternalSearch] = useState("");
@@ -247,14 +267,14 @@ export default function CardsPage() {
                 <div className="mt-3 space-y-1 text-sm text-slate-600">
                   <p>
                     <span className="font-medium text-slate-800">Typ:</span>{" "}
-                    {card.supertype}
+                    {formatGermanCardLabel(card.supertype)}
                   </p>
                   {card.types?.length ? (
                     <p>
                       <span className="font-medium text-slate-800">
                         Energie-Typ:
                       </span>{" "}
-                      {card.types.join(", ")}
+                    {card.types.map(formatGermanCardLabel).join(", ")}
                     </p>
                   ) : null}
                   {card.subtype ? (
@@ -330,7 +350,9 @@ export default function CardsPage() {
                               {attack.name}
                               {attack.damage ? ` · ${attack.damage}` : ""}:
                             </span>{" "}
-                            {attack.cost.join(" · ") || "Keine Energie"}
+                            {attack.cost
+                              .map(formatGermanCardLabel)
+                              .join(" · ") || "Keine Energie"}
                             {attack.text ? ` – ${attack.text}` : ""}
                           </p>
                         ))}
@@ -342,7 +364,9 @@ export default function CardsPage() {
                           Schwäche:
                         </span>{" "}
                         {card.weaknesses
-                          .map((weakness) => `${weakness.type} ${weakness.value ?? ""}`.trim())
+                          .map((weakness) =>
+                            `${formatGermanCardLabel(weakness.type)} ${weakness.value ?? ""}`.trim()
+                          )
                           .join(", ")}
                       </p>
                     ) : null}
@@ -352,7 +376,9 @@ export default function CardsPage() {
                           Resistenz:
                         </span>{" "}
                         {card.resistances
-                          .map((resistance) => `${resistance.type} ${resistance.value ?? ""}`.trim())
+                          .map((resistance) =>
+                            `${formatGermanCardLabel(resistance.type)} ${resistance.value ?? ""}`.trim()
+                          )
                           .join(", ")}
                       </p>
                     ) : null}
@@ -361,7 +387,9 @@ export default function CardsPage() {
                         <span className="font-medium text-slate-800">
                           Rückzugskosten:
                         </span>{" "}
-                        {card.retreatCost.join(" · ")}
+                      {card.retreatCost
+                        .map(formatGermanCardLabel)
+                        .join(" · ")}
                       </p>
                     ) : null}
                   </details>

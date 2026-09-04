@@ -7,6 +7,7 @@ export type TcgDexGermanCardBrief = {
   id: string;
   localId: string;
   name: string;
+  image?: string;
 };
 
 export type TcgDexGermanCard = TcgDexGermanCardBrief & {
@@ -24,7 +25,7 @@ export type TcgDexGermanCard = TcgDexGermanCardBrief & {
     cost?: string[];
     name: string;
     effect?: string;
-    damage?: string;
+    damage?: string | number;
   }>;
   weaknesses?: Array<{
     type: string;
@@ -95,12 +96,14 @@ function requestTcgDex<T>(path: string): Promise<T> {
 }
 
 export async function searchTcgDexGermanCardBriefs(
-  searchTerm: string
+  searchTerm: string,
+  options: { standardOnly?: boolean } = {}
 ): Promise<TcgDexGermanCardBrief[]> {
   const params = new URLSearchParams({
     name: searchTerm,
     "pagination:page": "1",
     "pagination:itemsPerPage": "20",
+    ...(options.standardOnly ? { "legal.standard": "true" } : {}),
   });
 
   return requestTcgDex<TcgDexGermanCardBrief[]>(`/cards?${params.toString()}`);
@@ -147,7 +150,8 @@ function toPokeDeckCard(card: TcgDexGermanCard): Card {
     attacks: card.attacks?.map((attack) => ({
       name: attack.name,
       cost: (attack.cost ?? []).map(toInternalTypeName),
-      damage: attack.damage,
+      damage:
+        attack.damage === undefined ? undefined : String(attack.damage),
       text: attack.effect,
     })),
     weaknesses: card.weaknesses?.map((weakness) => ({
@@ -172,6 +176,8 @@ function toPokeDeckCard(card: TcgDexGermanCard): Card {
     legalStandard: card.legal?.standard === true,
     setName: card.set?.name,
     cardNumber: card.localId,
+    imageSmall: card.image ? `${card.image}/low.webp` : undefined,
+    imageLarge: card.image ? `${card.image}/high.webp` : undefined,
   };
 }
 
@@ -179,7 +185,7 @@ export async function searchTcgDexGermanCards(
   searchTerm: string,
   options: { standardOnly?: boolean } = {}
 ): Promise<CardSearchResponse> {
-  const briefCards = await searchTcgDexGermanCardBriefs(searchTerm);
+  const briefCards = await searchTcgDexGermanCardBriefs(searchTerm, options);
   const cardResults = await Promise.allSettled(
     briefCards.map((card) => getTcgDexGermanCard(card.id))
   );
