@@ -75,6 +75,29 @@ export default function CardsPage() {
     });
   }, [externalCardFilter, externalResult, showBasicPokemonOnly]);
 
+  async function fetchExternalCards(page: number): Promise<CardSearchResponse> {
+    const params = new URLSearchParams({
+      q: externalSearch.trim(),
+      standardOnly: String(showStandardOnly),
+      language: externalLanguage,
+      page: String(page),
+    });
+    const response = await fetch(`/api/cards/search?${params.toString()}`);
+    const result = (await response.json()) as
+      | CardSearchResponse
+      | { error: string };
+
+    if (!response.ok || !("cards" in result)) {
+      throw new Error(
+        "error" in result
+          ? result.error
+          : "Die Kartendaten konnten gerade nicht geladen werden."
+      );
+    }
+
+    return result;
+  }
+
   async function handleExternalSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -89,25 +112,7 @@ export default function CardsPage() {
     setExternalError("");
 
     try {
-      const params = new URLSearchParams({
-        q: searchTerm,
-        standardOnly: String(showStandardOnly),
-        language: externalLanguage,
-      });
-      const response = await fetch(`/api/cards/search?${params.toString()}`);
-      const result = (await response.json()) as
-        | CardSearchResponse
-        | { error: string };
-
-      if (!response.ok || !("cards" in result)) {
-        throw new Error(
-          "error" in result
-            ? result.error
-            : "Die Kartendaten konnten gerade nicht geladen werden."
-        );
-      }
-
-      setExternalResult(result);
+      setExternalResult(await fetchExternalCards(1));
     } catch (error) {
       setExternalResult(null);
       setExternalError(
