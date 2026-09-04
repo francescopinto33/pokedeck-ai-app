@@ -47,6 +47,26 @@ export default function DecksPage() {
         <div className="space-y-4">
           {decks.map((deck) => {
             const validation = validateDeck(deck, allCards);
+            const composition = [
+              { label: "Pokémon", supertype: "Pokemon" as const },
+              { label: "Trainer", supertype: "Trainer" as const },
+              { label: "Energie", supertype: "Energy" as const },
+            ].map(({ label, supertype }) => {
+              const count = deck.cards.reduce((sum, entry) => {
+                const card = allCards.find((item) => item.id === entry.cardId);
+
+                return card?.supertype === supertype ? sum + entry.count : sum;
+              }, 0);
+
+              return {
+                label,
+                count,
+                percentage:
+                  validation.totalCards > 0
+                    ? Math.round((count / validation.totalCards) * 100)
+                    : 0,
+              };
+            });
             const formatLabel =
               deck.format === "standard-2026"
                 ? "Standardformat 2026"
@@ -127,6 +147,24 @@ export default function DecksPage() {
                           </ul>
                         </div>
                       ) : null}
+                    </div>
+
+                    <div className="rounded-lg border bg-slate-50 p-4">
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Deck-Zusammensetzung
+                      </h3>
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-center text-sm">
+                        {composition.map((item) => (
+                          <div key={item.label} className="rounded bg-white p-2">
+                            <p className="font-medium text-slate-900">
+                              {item.count}
+                            </p>
+                            <p className="text-xs text-slate-600">
+                              {item.label} · {item.percentage} %
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="rounded-lg border bg-slate-50 p-4">
