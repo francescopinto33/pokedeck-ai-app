@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getDeckTemplateById } from "@/data/deckTemplates";
 import { getAvailableCards } from "@/lib/availableCards";
@@ -910,9 +911,34 @@ export default function DeckBuilderClient() {
                             key={card.id}
                             className="flex items-center justify-between rounded-lg border p-3"
                           >
-                            <span className="text-sm text-slate-900">
-                              {card.name}
-                            </span>
+                            <div className="flex min-w-0 items-center gap-3">
+                              {card.imageSmall ? (
+                                <Image
+                                  src={card.imageSmall}
+                                  alt={
+                                    card.name +
+                                    " – " +
+                                    (card.setName ?? "Pokémon-Karte")
+                                  }
+                                  width={42}
+                                  height={59}
+                                  className="h-auto w-11 shrink-0 rounded shadow-sm"
+                                />
+                              ) : null}
+                              <div className="min-w-0">
+                                <p className="truncate text-sm text-slate-900">
+                                  {card.name}
+                                </p>
+                                {card.setName ? (
+                                  <p className="truncate text-xs text-slate-500">
+                                    {card.setName}
+                                    {card.cardNumber
+                                      ? ` · Nr. ${card.cardNumber}`
+                                      : ""}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
                             <span className="text-sm font-medium text-slate-700">
                               x{card.count}
                             </span>
