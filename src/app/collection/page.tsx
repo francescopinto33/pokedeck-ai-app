@@ -23,11 +23,25 @@ const collectionCardFilterOptions: Array<{
   { value: "Energy", label: "Energie" },
 ];
 
+const collectionFocusTypeLabels: Record<string, string> = {
+  Fire: "Feuer",
+  Water: "Wasser",
+  Grass: "Pflanze",
+  Lightning: "Elektro",
+  Psychic: "Psycho",
+  Fighting: "Kampf",
+  Darkness: "Finsternis",
+  Metal: "Metall",
+  Dragon: "Drache",
+};
+
 export default function CollectionPage() {
   const [entries, setEntries] = useState<CollectionEntry[]>([]);
   const [allCards, setAllCards] = useState<Card[]>([]);
   const [search, setSearch] = useState("");
   const [cardFilter, setCardFilter] = useState<CollectionCardFilter>("All");
+  const [focusType, setFocusType] = useState<string | null>(null);
+  const [isFocusActive, setIsFocusActive] = useState(false);
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [importPreview, setImportPreview] = useState<{
@@ -40,6 +54,19 @@ export default function CollectionPage() {
   useEffect(() => {
     setEntries(getCollection());
     setAllCards(getAvailableCards());
+
+    const requestedFocusType = new URLSearchParams(
+      window.location.search
+    ).get("focusType");
+
+    if (
+      requestedFocusType &&
+      collectionFocusTypeLabels[requestedFocusType]
+    ) {
+      setFocusType(requestedFocusType);
+      setIsFocusActive(true);
+      setShowOwnedOnly(true);
+    }
   }, []);
 
   function getOwnedCount(cardId: string) {
@@ -152,10 +179,28 @@ export default function CollectionPage() {
       const matchesCollection =
         !showOwnedOnly ||
         entries.some((entry) => entry.cardId === card.id && entry.owned > 0);
+      const matchesFocusType =
+        !isFocusActive ||
+        !focusType ||
+        card.supertype === "Trainer" ||
+        card.types?.includes(focusType);
 
-      return matchesSearch && matchesCardType && matchesCollection;
+      return (
+        matchesSearch &&
+        matchesCardType &&
+        matchesCollection &&
+        matchesFocusType
+      );
     });
-  }, [allCards, cardFilter, entries, search, showOwnedOnly]);
+  }, [
+    allCards,
+    cardFilter,
+    entries,
+    focusType,
+    isFocusActive,
+    search,
+    showOwnedOnly,
+  ]);
 
   return (
     <section className="space-y-6">
@@ -221,6 +266,25 @@ export default function CollectionPage() {
         >
           Nur vorhandene Karten
         </button>
+
+        {isFocusActive && focusType ? (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+            <span>
+              Fokus: {collectionFocusTypeLabels[focusType]}. Gezeigt werden
+              deine passenden Pokémon und Energien sowie Trainerkarten.
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setIsFocusActive(false);
+                setShowOwnedOnly(false);
+              }}
+              className="font-medium underline hover:text-slate-900"
+            >
+              Fokus entfernen
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="rounded-xl border bg-white p-6 shadow-sm">
