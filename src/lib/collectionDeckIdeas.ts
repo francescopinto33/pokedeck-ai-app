@@ -16,6 +16,7 @@ export type CollectionDeckIdea = {
   type: string;
   label: string;
   pokemonCount: number;
+  standardPokemonCount: number;
   basicPokemonCount: number;
   evolutionPokemonCount: number;
   supportedEvolutionPokemonCount: number;
@@ -70,6 +71,7 @@ export function getCollectionDeckIdeas(
     const newCounts: CollectionDeckIdeaCounts = {
       type,
       pokemonCount: 0,
+      standardPokemonCount: 0,
       basicPokemonCount: 0,
       evolutionPokemonCount: 0,
       supportedEvolutionPokemonCount: 0,
@@ -93,6 +95,10 @@ export function getCollectionDeckIdeas(
       for (const type of cardTypes) {
         const counts = getCounts(type);
         counts.pokemonCount += owned;
+
+        if (card.legalStandard) {
+          counts.standardPokemonCount += owned;
+        }
 
         if (card.isBasicPokemon) {
           counts.basicPokemonCount += owned;
