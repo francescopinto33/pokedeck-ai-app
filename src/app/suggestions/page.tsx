@@ -139,6 +139,13 @@ export default function SuggestionsPage() {
                     {idea.trainerCount}
                   </span>
                 </p>
+
+                <Link
+                  href={`/decks/new?focusType=${encodeURIComponent(idea.type)}`}
+                  className="mt-4 inline-block rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  {idea.label}-Karten im Builder öffnen
+                </Link>
               </article>
             ))}
           </div>
