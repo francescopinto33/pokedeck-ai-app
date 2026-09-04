@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { sampleCards } from "@/data/sampleCards";
 import { addCardToCollection } from "@/lib/storage";
 import type { Card, CardSearchResponse } from "@/types";
@@ -599,7 +600,10 @@ export default function CardsPage() {
 
       {collectionMessage ? (
         <p aria-live="polite" className="text-sm text-green-700">
-          {collectionMessage}
+          {collectionMessage} {" "}
+          <Link href="/collection" className="font-medium underline">
+            Sammlung öffnen
+          </Link>
         </p>
       ) : null}
 
