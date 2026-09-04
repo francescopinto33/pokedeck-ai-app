@@ -41,6 +41,7 @@ type PokemonTcgApiResponse = {
 };
 
 const API_URL = "https://api.pokemontcg.io/v2/cards";
+const FIRST_STANDARD_2026_REGULATION_MARK = "H";
 const CARD_FIELDS = [
   "id",
   "name",
@@ -61,6 +62,13 @@ const CARD_FIELDS = [
   "number",
   "images",
 ].join(",");
+
+function hasCurrentStandardRegulationMark(card: PokemonTcgApiCard) {
+  return Boolean(
+    card.regulationMark &&
+      card.regulationMark >= FIRST_STANDARD_2026_REGULATION_MARK
+  );
+}
 
 function toPokeDeckCard(card: PokemonTcgApiCard): Card {
   const subtypes = card.subtypes ?? [];
@@ -84,7 +92,9 @@ function toPokeDeckCard(card: PokemonTcgApiCard): Card {
       card.supertype === "Pokémon" && subtypes.includes("Basic"),
     isBasicEnergy:
       card.supertype === "Energy" && subtypes.includes("Basic"),
-    legalStandard: card.legalities?.standard === "Legal",
+    legalStandard:
+      card.legalities?.standard === "Legal" &&
+      hasCurrentStandardRegulationMark(card),
     setName: card.set?.name,
     cardNumber: card.number,
     imageSmall: card.images?.small,
@@ -159,7 +169,8 @@ async function getPokemonTcgApiResponse(
 }
 
 export async function searchPokemonTcgCards(
-  searchTerm: string
+  searchTerm: string,
+  options: { standardOnly?: boolean } = {}
 ): Promise<CardSearchResponse> {
   const normalizedSearchTerm = normalizeSearchTerm(searchTerm);
 
@@ -167,10 +178,17 @@ export async function searchPokemonTcgCards(
     return { cards: [], totalCount: 0 };
   }
 
+  const queryParts = [`name:"${normalizedSearchTerm}"`];
+
+  if (options.standardOnly) {
+    queryParts.push("legalities.standard:Legal");
+  }
+
   const params = new URLSearchParams({
-    q: `name:"${normalizedSearchTerm}"`,
-    pageSize: "20",
+    q: queryParts.join(" "),
+    pageSize: options.standardOnly ? "250" : "20",
     select: CARD_FIELDS,
+    ...(options.standardOnly ? { orderBy: "-set.releaseDate" } : {}),
   });
   const apiKey = process.env.POKEMON_TCG_API_KEY;
   const payload = await getPokemonTcgApiResponse(
@@ -178,8 +196,34 @@ export async function searchPokemonTcgCards(
     apiKey
   );
 
+  if (!options.standardOnly) {
+    return {
+      cards: payload.data.map(toPokeDeckCard),
+      totalCount: payload.totalCount,
+    };
+  }
+
+  const currentLegalCardNames = new Set(
+    payload.data
+      .filter(
+        (card) =>
+          card.legalities?.standard === "Legal" &&
+          hasCurrentStandardRegulationMark(card)
+      )
+      .map((card) => card.name)
+  );
+  const cards = payload.data
+    .filter(
+      (card) =>
+        card.legalities?.standard === "Legal" &&
+        (hasCurrentStandardRegulationMark(card) ||
+          currentLegalCardNames.has(card.name))
+    )
+    .map((card) => ({ ...toPokeDeckCard(card), legalStandard: true }))
+    .slice(0, 20);
+
   return {
-    cards: payload.data.map(toPokeDeckCard),
-    totalCount: payload.totalCount,
+    cards,
+    totalCount: cards.length,
   };
 }

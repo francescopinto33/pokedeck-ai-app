@@ -4,7 +4,9 @@ import { searchPokemonTcgCards } from "@/lib/pokemonTcgApi";
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const searchTerm = new URL(request.url).searchParams.get("q")?.trim() ?? "";
+  const searchParams = new URL(request.url).searchParams;
+  const searchTerm = searchParams.get("q")?.trim() ?? "";
+  const standardOnly = searchParams.get("standardOnly") === "true";
 
   if (!searchTerm) {
     return NextResponse.json({ cards: [], totalCount: 0 });
@@ -18,7 +20,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await searchPokemonTcgCards(searchTerm);
+    const result = await searchPokemonTcgCards(searchTerm, { standardOnly });
     return NextResponse.json(result);
   } catch {
     return NextResponse.json(

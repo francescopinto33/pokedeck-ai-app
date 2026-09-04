@@ -6,6 +6,8 @@ import { sampleCards } from "@/data/sampleCards";
 import { addCardToCollection } from "@/lib/storage";
 import type { Card, CardSearchResponse } from "@/types";
 
+type ExternalCardFilter = "All" | Card["supertype"];
+
 export default function CardsPage() {
   const [localSearch, setLocalSearch] = useState("");
   const [externalSearch, setExternalSearch] = useState("");
@@ -13,6 +15,10 @@ export default function CardsPage() {
     useState<CardSearchResponse | null>(null);
   const [externalError, setExternalError] = useState("");
   const [isSearchingExternal, setIsSearchingExternal] = useState(false);
+  const [externalCardFilter, setExternalCardFilter] =
+    useState<ExternalCardFilter>("All");
+  const [showStandardOnly, setShowStandardOnly] = useState(true);
+  const [showBasicPokemonOnly, setShowBasicPokemonOnly] = useState(false);
   const [importAmounts, setImportAmounts] = useState<Record<string, number>>(
     {}
   );
@@ -30,6 +36,22 @@ export default function CardsPage() {
     );
   }, [localSearch]);
 
+  const filteredExternalCards = useMemo(() => {
+    if (!externalResult) {
+      return [];
+    }
+
+    return externalResult.cards.filter((card) => {
+      const matchesCardType =
+        externalCardFilter === "All" ||
+        card.supertype === externalCardFilter;
+      const matchesBasicPokemon =
+        !showBasicPokemonOnly || card.isBasicPokemon;
+
+      return matchesCardType && matchesBasicPokemon;
+    });
+  }, [externalCardFilter, externalResult, showBasicPokemonOnly]);
+
   async function handleExternalSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -44,9 +66,11 @@ export default function CardsPage() {
     setExternalError("");
 
     try {
-      const response = await fetch(
-        `/api/cards/search?q=${encodeURIComponent(searchTerm)}`
-      );
+      const params = new URLSearchParams({
+        q: searchTerm,
+        standardOnly: String(showStandardOnly),
+      });
+      const response = await fetch(`/api/cards/search?${params.toString()}`);
       const result = (await response.json()) as
         | CardSearchResponse
         | { error: string };
@@ -123,30 +147,64 @@ export default function CardsPage() {
               {isSearchingExternal ? "Suche läuft …" : "Suchen"}
             </button>
           </div>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={showStandardOnly}
+                onChange={(event) => setShowStandardOnly(event.target.checked)}
+              />
+              Nur Standardformat 2026 (H+)
+            </label>
+            <label className="flex items-center gap-2">
+              Kartenart
+              <select
+                value={externalCardFilter}
+                onChange={(event) =>
+                  setExternalCardFilter(event.target.value as ExternalCardFilter)
+                }
+                className="rounded border px-2 py-1"
+              >
+                <option value="All">Alle</option>
+                <option value="Pokemon">Pokémon</option>
+                <option value="Trainer">Trainer</option>
+                <option value="Energy">Energie</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={showBasicPokemonOnly}
+                onChange={(event) =>
+                  setShowBasicPokemonOnly(event.target.checked)}
+              />
+              Nur Basis-Pokémon
+            </label>
+          </div>
         </form>
 
         <p className="mt-3 text-sm text-slate-500" aria-live="polite">
           {externalError
             ? externalError
             : externalResult
-              ? `${externalResult.totalCount} Treffer gefunden. Es werden maximal 20 angezeigt.`
-              : "Die Suche nutzt die aktuelle Pokémon-TCG-Kartendatenbank."}
+              ? `${externalResult.totalCount} Treffer gefunden. ${filteredExternalCards.length} werden mit den gewählten Filtern angezeigt.`
+              : "Standardformat 2026 ist vorausgewählt. Die Filter werden bei der nächsten Suche angewendet."}
         </p>
       </div>
 
-      {externalResult && externalResult.cards.length === 0 ? (
+      {externalResult && filteredExternalCards.length === 0 ? (
         <div className="rounded-xl border bg-white p-6 text-sm text-slate-600 shadow-sm">
-          Keine echten Karten gefunden.
+          Keine Karten mit den gewählten Filtern gefunden.
         </div>
       ) : null}
 
-      {externalResult && externalResult.cards.length > 0 ? (
+      {externalResult && filteredExternalCards.length > 0 ? (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-slate-900">
             Ergebnisse aus der Kartendatenbank
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {externalResult.cards.map((card) => (
+            {filteredExternalCards.map((card) => (
               <article
                 key={card.id}
                 className="rounded-xl border bg-white p-5 shadow-sm"
