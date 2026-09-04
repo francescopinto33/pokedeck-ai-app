@@ -201,6 +201,23 @@ export default function CollectionPage() {
     search,
     showOwnedOnly,
   ]);
+  const ownedCardsInFilter = filteredCards.reduce((sum, card) => {
+    const owned = entries.find((entry) => entry.cardId === card.id)?.owned ?? 0;
+
+    return sum + owned;
+  }, 0);
+  const hasActiveFilters =
+    search.trim() !== "" ||
+    cardFilter !== "All" ||
+    showOwnedOnly ||
+    isFocusActive;
+
+  function resetCollectionFilters() {
+    setSearch("");
+    setCardFilter("All");
+    setIsFocusActive(false);
+    setShowOwnedOnly(false);
+  }
 
   return (
     <section className="space-y-6">
@@ -371,6 +388,23 @@ export default function CollectionPage() {
             <p aria-live="polite" className="mt-3 text-sm text-green-700">
               {importMessage}
             </p>
+          ) : null}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-slate-600">
+            {filteredCards.length} {filteredCards.length === 1 ? "Kartenart" : "Kartenarten"}{" "}
+            angezeigt · {ownedCardsInFilter} {ownedCardsInFilter === 1 ? "Exemplar" : "Exemplare"}{" "}
+            vorhanden
+          </p>
+          {hasActiveFilters ? (
+            <button
+              type="button"
+              onClick={resetCollectionFilters}
+              className="text-sm font-medium text-slate-700 underline hover:text-slate-900"
+            >
+              Filter zurücksetzen
+            </button>
           ) : null}
         </div>
 
