@@ -13,6 +13,7 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
   let aceSpecCount = 0;
   let energyCount = 0;
   let trainerCount = 0;
+  const basicEnergyTypes = new Set<string>();
   const cardCountsByName = new Map<string, number>();
   const nonStandardCardNames = new Set<string>();
 
@@ -30,6 +31,12 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
 
     if (card.supertype === "Energy") {
       energyCount += entry.count;
+
+      if (card.isBasicEnergy) {
+        for (const type of card.types ?? []) {
+          basicEnergyTypes.add(type);
+        }
+      }
     }
 
     if (card.supertype === "Trainer") {
@@ -81,6 +88,12 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
   if (totalCards === 60 && (trainerCount < 20 || trainerCount > 25)) {
     warnings.push(
       `Das Regelbuch empfiehlt etwa 20 bis 25 Trainerkarten. Dein Deck enthält ${trainerCount}.`
+    );
+  }
+
+  if (totalCards === 60 && basicEnergyTypes.size > 2) {
+    warnings.push(
+      `Das Regelbuch empfiehlt ein oder höchstens zwei Energie-Typen. Dein Deck verwendet ${basicEnergyTypes.size} Basis-Energie-Typen.`
     );
   }
 
