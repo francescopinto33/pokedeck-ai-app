@@ -173,6 +173,12 @@ export function getCollectionDeckIdeas(
         );
       }
 
+      if (counts.standardPokemonCount < counts.pokemonCount) {
+        hints.push(
+          `${counts.pokemonCount - counts.standardPokemonCount} Pokémon sind nicht im Standardformat 2026 zugelassen.`
+        );
+      }
+
       hints.push(...Array.from(new Set(missingEvolutionHints)));
 
       if (hints.length === 0) {
