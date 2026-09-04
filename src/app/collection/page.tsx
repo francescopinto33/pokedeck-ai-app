@@ -234,8 +234,8 @@ export default function CollectionPage() {
       const matchesFocusType =
         !isFocusActive ||
         !focusType ||
-        card.supertype === "Trainer" ||
-        card.types?.includes(focusType);
+        ((card.supertype === "Pokemon" || card.supertype === "Energy") &&
+          card.types?.includes(focusType));
 
       return (
         matchesSearch &&
@@ -386,7 +386,7 @@ export default function CollectionPage() {
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
             <span>
               Fokus: {collectionFocusTypeLabels[focusType]}. Gezeigt werden
-              deine passenden Pokémon und Energien sowie Trainerkarten.
+              deine passenden Pokémon und Energien.
             </span>
             <button
               type="button"

@@ -184,7 +184,7 @@ export default function SuggestionsPage() {
                     href={`/collection?focusType=${encodeURIComponent(idea.type)}`}
                     className="rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
                   >
-                    {idea.label}-Sammlung prüfen
+                    {idea.label}-Pokémon und Energie prüfen
                   </Link>
                   {idea.standardPokemonCount > 0 ? (
                     <Link
