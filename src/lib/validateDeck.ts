@@ -12,6 +12,7 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
   let hasBasicPokemon = false;
   let aceSpecCount = 0;
   let energyCount = 0;
+  let trainerCount = 0;
   const cardCountsByName = new Map<string, number>();
   const nonStandardCardNames = new Set<string>();
 
@@ -29,6 +30,10 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
 
     if (card.supertype === "Energy") {
       energyCount += entry.count;
+    }
+
+    if (card.supertype === "Trainer") {
+      trainerCount += entry.count;
     }
 
     if (!card.isBasicEnergy) {
@@ -70,6 +75,12 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
   if (totalCards === 60 && (energyCount < 12 || energyCount > 15)) {
     warnings.push(
       `Das Regelbuch empfiehlt etwa 12 bis 15 Energiekarten. Dein Deck enthält ${energyCount}.`
+    );
+  }
+
+  if (totalCards === 60 && (trainerCount < 20 || trainerCount > 25)) {
+    warnings.push(
+      `Das Regelbuch empfiehlt etwa 20 bis 25 Trainerkarten. Dein Deck enthält ${trainerCount}.`
     );
   }
 
