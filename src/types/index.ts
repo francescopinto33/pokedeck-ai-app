@@ -51,11 +51,14 @@ export type CardAttack = {
     cardId: string;
     count: number;
   };
+
+  export type DeckFormat = "free" | "standard-2026";
   
   export type Deck = {
     id: string;
     name: string;
     cards: DeckCard[];
+    format?: DeckFormat;
     createdAt: string;
     updatedAt: string;
   };
