@@ -85,6 +85,11 @@ export default function DeckBuilderClient() {
   const searchParams = useSearchParams();
   const deckIdFromUrl = searchParams.get("id");
   const templateIdFromUrl = searchParams.get("template");
+  const requestedFocusType = searchParams.get("focusType");
+  const focusType =
+    requestedFocusType && energyTypeLabels[requestedFocusType]
+      ? requestedFocusType
+      : null;
   const selectedTemplate = getDeckTemplateById(templateIdFromUrl);
 
   const [deckId, setDeckId] = useState<string | null>(null);
@@ -99,7 +104,8 @@ export default function DeckBuilderClient() {
   const [copyMessage, setCopyMessage] = useState("");
   const [search, setSearch] = useState("");
   const [cardFilter, setCardFilter] = useState<CardFilter>("All");
-  const [showOwnedOnly, setShowOwnedOnly] = useState(false);
+  const [isFocusActive, setIsFocusActive] = useState(focusType !== null);
+  const [showOwnedOnly, setShowOwnedOnly] = useState(focusType !== null);
   const [showStandardOnly, setShowStandardOnly] = useState(false);
   const [isDraftDirty, setIsDraftDirty] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
@@ -285,7 +291,8 @@ export default function DeckBuilderClient() {
     search.trim() !== "" ||
     cardFilter !== "All" ||
     showOwnedOnly ||
-    showStandardOnly;
+    showStandardOnly ||
+    (isFocusActive && focusType !== null);
 
   const filteredCards = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -300,18 +307,26 @@ export default function DeckBuilderClient() {
           (entry) => entry.cardId === card.id && entry.owned > 0
         );
       const matchesStandardFormat = !showStandardOnly || card.legalStandard;
+      const matchesFocusType =
+        !isFocusActive ||
+        !focusType ||
+        card.supertype === "Trainer" ||
+        card.types?.includes(focusType);
 
       return (
         matchesSearch &&
         matchesFilter &&
         matchesCollection &&
-        matchesStandardFormat
+        matchesStandardFormat &&
+        matchesFocusType
       );
     });
   }, [
     allCards,
     cardFilter,
     collection,
+    focusType,
+    isFocusActive,
     search,
     showOwnedOnly,
     showStandardOnly,
@@ -394,6 +409,7 @@ export default function DeckBuilderClient() {
   function resetCardFilters() {
     setSearch("");
     setCardFilter("All");
+    setIsFocusActive(false);
     setShowOwnedOnly(false);
     setShowStandardOnly(false);
   }
@@ -715,6 +731,13 @@ export default function DeckBuilderClient() {
             <p className="mt-1 text-sm text-slate-600">
               Fuege Karten mit +1 hinzu oder entferne sie mit -1.
             </p>
+
+            {isFocusActive && focusType ? (
+              <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+                Fokus: {energyTypeLabels[focusType]}. Angezeigt werden deine
+                passenden Pokémon und Basis-Energien sowie Trainerkarten.
+              </p>
+            ) : null}
 
             <div className="mt-4">
               <label
