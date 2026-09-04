@@ -11,6 +11,7 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
 
   let hasBasicPokemon = false;
   let aceSpecCount = 0;
+  let energyCount = 0;
   const cardCountsByName = new Map<string, number>();
   const nonStandardCardNames = new Set<string>();
 
@@ -24,6 +25,10 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
 
     if (card.isBasicPokemon && entry.count > 0) {
       hasBasicPokemon = true;
+    }
+
+    if (card.supertype === "Energy") {
+      energyCount += entry.count;
     }
 
     if (!card.isBasicEnergy) {
@@ -59,6 +64,12 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
   for (const cardName of nonStandardCardNames) {
     errors.push(
       `${cardName} ist nicht im Standardformat 2026 zugelassen.`
+    );
+  }
+
+  if (totalCards === 60 && (energyCount < 12 || energyCount > 15)) {
+    warnings.push(
+      `Das Regelbuch empfiehlt etwa 12 bis 15 Energiekarten. Dein Deck enthält ${energyCount}.`
     );
   }
 
