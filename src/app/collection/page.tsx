@@ -11,10 +11,23 @@ import {
 import { getCollection, saveCollection } from "@/lib/storage";
 import type { Card, CollectionEntry } from "@/types";
 
+type CollectionCardFilter = "All" | Card["supertype"];
+
+const collectionCardFilterOptions: Array<{
+  value: CollectionCardFilter;
+  label: string;
+}> = [
+  { value: "All", label: "Alle" },
+  { value: "Pokemon", label: "Pokémon" },
+  { value: "Trainer", label: "Trainer" },
+  { value: "Energy", label: "Energie" },
+];
+
 export default function CollectionPage() {
   const [entries, setEntries] = useState<CollectionEntry[]>([]);
   const [allCards, setAllCards] = useState<Card[]>([]);
   const [search, setSearch] = useState("");
+  const [cardFilter, setCardFilter] = useState<CollectionCardFilter>("All");
   const [saveMessage, setSaveMessage] = useState("");
   const [importPreview, setImportPreview] = useState<{
     entries: CollectionEntry[];
@@ -130,14 +143,15 @@ export default function CollectionPage() {
   const filteredCards = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    if (!normalizedSearch) {
-      return allCards;
-    }
+    return allCards.filter((card) => {
+      const matchesSearch =
+        !normalizedSearch || card.name.toLowerCase().includes(normalizedSearch);
+      const matchesCardType =
+        cardFilter === "All" || card.supertype === cardFilter;
 
-    return allCards.filter((card) =>
-      card.name.toLowerCase().includes(normalizedSearch)
-    );
-  }, [allCards, search]);
+      return matchesSearch && matchesCardType;
+    });
+  }, [allCards, cardFilter, search]);
 
   return (
     <section className="space-y-6">
@@ -163,6 +177,33 @@ export default function CollectionPage() {
             className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
           />
         </div>
+
+        <fieldset className="mt-4">
+          <legend className="mb-2 text-sm font-medium text-slate-700">
+            Kartentyp
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {collectionCardFilterOptions.map((option) => {
+              const isActive = cardFilter === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => setCardFilter(option.value)}
+                  className={
+                    isActive
+                      ? "rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                      : "rounded-lg border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  }
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
       </div>
 
       <div className="rounded-xl border bg-white p-6 shadow-sm">
