@@ -88,6 +88,20 @@ function saveImportedCards(cards: Card[]): void {
   window.localStorage.setItem(IMPORTED_CARDS_KEY, JSON.stringify(cards));
 }
 
+export function mergeImportedCards(cards: Card[]): Card[] {
+  const cardsById = new Map(
+    getImportedCards().map((card) => [card.id, card])
+  );
+
+  for (const card of cards) {
+    cardsById.set(card.id, card);
+  }
+
+  const mergedCards = Array.from(cardsById.values());
+  saveImportedCards(mergedCards);
+  return mergedCards;
+}
+
 export function addCardToCollection(card: Card, amount: number): CollectionEntry[] {
   const safeAmount = Math.max(0, Math.floor(amount));
 
