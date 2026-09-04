@@ -47,6 +47,10 @@ export default function DecksPage() {
         <div className="space-y-4">
           {decks.map((deck) => {
             const validation = validateDeck(deck, allCards);
+            const formatLabel =
+              deck.format === "standard-2026"
+                ? "Standardformat 2026"
+                : "Freies Deck";
             const comparison = compareDeckToCollection(
               deck,
               collection,
@@ -86,6 +90,9 @@ export default function DecksPage() {
                       </h2>
                       <p className="mt-1 text-sm text-slate-600">
                         Karten insgesamt: {validation.totalCards}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Format: {formatLabel}
                       </p>
                     </div>
 
