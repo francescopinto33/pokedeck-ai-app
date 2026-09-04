@@ -93,6 +93,7 @@ export default function DeckBuilderClient() {
   const [search, setSearch] = useState("");
   const [cardFilter, setCardFilter] = useState<CardFilter>("All");
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
+  const [showStandardOnly, setShowStandardOnly] = useState(false);
   const [isDraftDirty, setIsDraftDirty] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [draftMessage, setDraftMessage] = useState("");
@@ -267,7 +268,10 @@ export default function DeckBuilderClient() {
         : (totalCards - 60) + " Karten über dem Ziel von 60.";
 
   const hasActiveCardFilters =
-    search.trim() !== "" || cardFilter !== "All" || showOwnedOnly;
+    search.trim() !== "" ||
+    cardFilter !== "All" ||
+    showOwnedOnly ||
+    showStandardOnly;
 
   const filteredCards = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -281,10 +285,23 @@ export default function DeckBuilderClient() {
         collection.some(
           (entry) => entry.cardId === card.id && entry.owned > 0
         );
+      const matchesStandardFormat = !showStandardOnly || card.legalStandard;
 
-      return matchesSearch && matchesFilter && matchesCollection;
+      return (
+        matchesSearch &&
+        matchesFilter &&
+        matchesCollection &&
+        matchesStandardFormat
+      );
     });
-  }, [allCards, cardFilter, collection, search, showOwnedOnly]);
+  }, [
+    allCards,
+    cardFilter,
+    collection,
+    search,
+    showOwnedOnly,
+    showStandardOnly,
+  ]);
 
   const validationResult = useMemo(() => {
     const deckToValidate: Deck = {
@@ -363,6 +380,7 @@ export default function DeckBuilderClient() {
     setSearch("");
     setCardFilter("All");
     setShowOwnedOnly(false);
+    setShowStandardOnly(false);
   }
 
   function handleDiscardDraft() {
@@ -488,6 +506,10 @@ export default function DeckBuilderClient() {
           (energyTypeLabels[type] ?? type) +
           "-Pokémon fehlt eine passende Basis-Energie."
       );
+  }, [selectedCards]);
+
+  const nonStandardCards = useMemo(() => {
+    return selectedCards.filter((card) => !card.legalStandard);
   }, [selectedCards]);
 
   const startHandHint = useMemo(() => {
@@ -676,6 +698,20 @@ export default function DeckBuilderClient() {
               >
                 Nur vorhandene Karten
               </button>
+              <button
+                type="button"
+                aria-pressed={showStandardOnly}
+                onClick={() =>
+                  setShowStandardOnly((currentValue) => !currentValue)
+                }
+                className={
+                  showStandardOnly
+                    ? "ml-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                    : "ml-2 rounded-lg border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                }
+              >
+                Nur Standardformat 2026
+              </button>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
@@ -827,6 +863,26 @@ export default function DeckBuilderClient() {
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-900">
                   {missingEnergyTypeWarnings.map((warning) => (
                     <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {nonStandardCards.length > 0 ? (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+                <h3 className="font-semibold text-amber-900">
+                  Standardformat-Hinweis
+                </h3>
+                <p className="mt-2 text-amber-900">
+                  Diese Karten sind nach dem Stand des Standardformats 2026
+                  nicht zugelassen. Das Deck kann trotzdem als freies Deck
+                  weiterbearbeitet werden.
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-900">
+                  {nonStandardCards.map((card) => (
+                    <li key={card.id}>
+                      {card.name} ({card.count}x)
+                    </li>
                   ))}
                 </ul>
               </div>
