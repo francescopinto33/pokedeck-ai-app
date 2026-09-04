@@ -60,9 +60,20 @@ export default function SuggestionsPage() {
         </h2>
         <p className="mt-2 text-sm text-slate-600">
           Diese Einschätzung basiert auf deinen vorhandenen Pokémon und
-          passenden Basis-Energien. Sie ist eine Orientierung, noch keine
-          automatisch erzeugte Deckliste.
+          passenden Basis-Energien sowie Trainerkarten. Sie ist eine
+          Orientierung, noch keine automatisch erzeugte Deckliste.
         </p>
+        <details className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+          <summary className="cursor-pointer font-medium text-slate-800">
+            So entsteht der Bereitschaftswert
+          </summary>
+          <p className="mt-2">
+            Gewertet werden Pokémon des jeweiligen Typs, Basis-Pokémon für
+            eine stabile Starthand, passende Basis-Energien und die Anzahl
+            deiner Trainerkarten. Der Wert zeigt die vorhandene Grundlage,
+            nicht die Spielstärke eines fertigen Decks.
+          </p>
+        </details>
 
         {collectionDeckIdeas.length === 0 ? (
           <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-700">
