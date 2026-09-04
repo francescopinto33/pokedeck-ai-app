@@ -757,6 +757,11 @@ export default function DeckBuilderClient() {
                       <p className="mt-1 text-xs text-slate-500">
                         Sammlung: {owned} vorhanden • Fehlt fürs Deck: {missing}
                       </p>
+                      {!card.legalStandard ? (
+                        <p className="mt-1 text-xs font-medium text-amber-700">
+                          Nicht im Standardformat 2026 zugelassen
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="flex items-center gap-2">
