@@ -27,6 +27,7 @@ export type CardAttack = {
     types?: string[];
     isBasicPokemon: boolean;
     isBasicEnergy: boolean;
+    isAceSpec?: boolean;
     legalStandard: boolean;
     setName?: string;
     cardNumber?: string;

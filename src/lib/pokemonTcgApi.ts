@@ -92,6 +92,7 @@ function toPokeDeckCard(card: PokemonTcgApiCard): Card {
       card.supertype === "Pokémon" && subtypes.includes("Basic"),
     isBasicEnergy:
       card.supertype === "Energy" && subtypes.includes("Basic"),
+    isAceSpec: subtypes.includes("ACE SPEC"),
     legalStandard:
       card.legalities?.standard === "Legal" &&
       hasCurrentStandardRegulationMark(card),

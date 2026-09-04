@@ -9,6 +9,8 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
   }
 
   let hasBasicPokemon = false;
+  let aceSpecCount = 0;
+  const cardCountsByName = new Map<string, number>();
 
   for (const entry of deck.cards) {
     const card = allCards.find((item) => item.id === entry.cardId);
@@ -22,9 +24,30 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
       hasBasicPokemon = true;
     }
 
-    if (!card.isBasicEnergy && entry.count > 4) {
-      errors.push(`${card.name} ist ${entry.count}-mal enthalten.`);
+    if (!card.isBasicEnergy) {
+      cardCountsByName.set(
+        card.name,
+        (cardCountsByName.get(card.name) ?? 0) + entry.count
+      );
     }
+
+    if (card.isAceSpec || card.subtype?.includes("ACE SPEC")) {
+      aceSpecCount += entry.count;
+    }
+  }
+
+  for (const [cardName, count] of cardCountsByName) {
+    if (count > 4) {
+      errors.push(
+        `${cardName} ist insgesamt ${count}-mal enthalten. Maximal 4 Karten mit demselben Namen sind erlaubt.`
+      );
+    }
+  }
+
+  if (aceSpecCount > 1) {
+    errors.push(
+      `Es sind ${aceSpecCount} ASS-KLASSE-Karten enthalten. Maximal 1 ASS-KLASSE-Karte ist erlaubt.`
+    );
   }
 
   if (!hasBasicPokemon) {
