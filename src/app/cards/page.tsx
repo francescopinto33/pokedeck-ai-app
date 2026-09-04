@@ -132,6 +132,27 @@ export default function CardsPage() {
     });
   }, [cardListChoices, cardListResult]);
 
+  const cardListSummary = useMemo(() => {
+    if (!cardListResult) {
+      return { needsChoice: 0, notFound: 0 };
+    }
+
+    return cardListResult.items.reduce(
+      (summary, item, index) => {
+        if (item.status === "notFound") {
+          summary.notFound += 1;
+        }
+
+        if (item.status === "needsChoice" && !cardListChoices[String(index)]) {
+          summary.needsChoice += 1;
+        }
+
+        return summary;
+      },
+      { needsChoice: 0, notFound: 0 }
+    );
+  }, [cardListChoices, cardListResult]);
+
   async function fetchExternalCards(page: number): Promise<CardSearchResponse> {
     const params = new URLSearchParams({
       q: externalSearch.trim(),
@@ -500,6 +521,15 @@ export default function CardsPage() {
           <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-700">
             <p className="font-medium text-slate-900">
               {cardListResult.items.length} Kartenarten geprüft.
+            </p>
+            <p className="mt-1">
+              {selectedCardListItems.length} zur Übernahme bereit
+              {cardListSummary.needsChoice > 0
+                ? ` · ${cardListSummary.needsChoice} Druck${cardListSummary.needsChoice === 1 ? "" : "e"} auswählen`
+                : ""}
+              {cardListSummary.notFound > 0
+                ? ` · ${cardListSummary.notFound} nicht gefunden`
+                : ""}
             </p>
             <ul className="mt-3 space-y-2">
               {cardListResult.items.map((item, index) => (
