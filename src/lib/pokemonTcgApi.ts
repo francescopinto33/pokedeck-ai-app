@@ -42,6 +42,7 @@ type PokemonTcgApiResponse = {
 
 const API_URL = "https://api.pokemontcg.io/v2/cards";
 const FIRST_STANDARD_2026_REGULATION_MARK = "H";
+const CARD_RESULTS_PER_PAGE = 20;
 const CARD_FIELDS = [
   "id",
   "name",
@@ -171,12 +172,13 @@ async function getPokemonTcgApiResponse(
 
 export async function searchPokemonTcgCards(
   searchTerm: string,
-  options: { standardOnly?: boolean } = {}
+  options: { standardOnly?: boolean; page?: number } = {}
 ): Promise<CardSearchResponse> {
   const normalizedSearchTerm = normalizeSearchTerm(searchTerm);
+  const page = Math.max(1, Math.floor(options.page ?? 1));
 
   if (normalizedSearchTerm.length < 2) {
-    return { cards: [], totalCount: 0 };
+    return { cards: [], totalCount: 0, page, hasMore: false };
   }
 
   const queryParts = [`name:"${normalizedSearchTerm}"`];
@@ -187,7 +189,8 @@ export async function searchPokemonTcgCards(
 
   const params = new URLSearchParams({
     q: queryParts.join(" "),
-    pageSize: options.standardOnly ? "250" : "20",
+    pageSize: options.standardOnly ? "250" : String(CARD_RESULTS_PER_PAGE),
+    page: options.standardOnly ? "1" : String(page),
     select: CARD_FIELDS,
     ...(options.standardOnly ? { orderBy: "-set.releaseDate" } : {}),
   });
@@ -201,6 +204,8 @@ export async function searchPokemonTcgCards(
     return {
       cards: payload.data.map(toPokeDeckCard),
       totalCount: payload.totalCount,
+      page,
+      hasMore: page * CARD_RESULTS_PER_PAGE < payload.totalCount,
     };
   }
 
@@ -213,18 +218,23 @@ export async function searchPokemonTcgCards(
       )
       .map((card) => card.name)
   );
-  const cards = payload.data
+  const currentLegalCards = payload.data
     .filter(
       (card) =>
         card.legalities?.standard === "Legal" &&
         (hasCurrentStandardRegulationMark(card) ||
           currentLegalCardNames.has(card.name))
     )
-    .map((card) => ({ ...toPokeDeckCard(card), legalStandard: true }))
-    .slice(0, 20);
+    .map((card) => ({ ...toPokeDeckCard(card), legalStandard: true }));
+  const cards = currentLegalCards.slice(
+    (page - 1) * CARD_RESULTS_PER_PAGE,
+    page * CARD_RESULTS_PER_PAGE
+  );
 
   return {
     cards,
-    totalCount: cards.length,
+    totalCount: currentLegalCards.length,
+    page,
+    hasMore: page * CARD_RESULTS_PER_PAGE < currentLegalCards.length,
   };
 }

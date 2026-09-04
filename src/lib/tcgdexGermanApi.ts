@@ -2,6 +2,7 @@ import { get } from "node:https";
 import type { Card, CardSearchResponse } from "@/types";
 
 const TCGDEX_GERMAN_API_URL = "https://api.tcgdex.net/v2/de";
+const CARD_RESULTS_PER_PAGE = 20;
 
 export type TcgDexGermanCardBrief = {
   id: string;
@@ -97,12 +98,13 @@ function requestTcgDex<T>(path: string): Promise<T> {
 
 export async function searchTcgDexGermanCardBriefs(
   searchTerm: string,
-  options: { standardOnly?: boolean } = {}
+  options: { standardOnly?: boolean; page?: number } = {}
 ): Promise<TcgDexGermanCardBrief[]> {
+  const page = Math.max(1, Math.floor(options.page ?? 1));
   const params = new URLSearchParams({
     name: searchTerm,
-    "pagination:page": "1",
-    "pagination:itemsPerPage": "20",
+    "pagination:page": String(page),
+    "pagination:itemsPerPage": String(CARD_RESULTS_PER_PAGE),
     ...(options.standardOnly ? { "legal.standard": "true" } : {}),
   });
 
@@ -183,7 +185,7 @@ function toPokeDeckCard(card: TcgDexGermanCard): Card {
 
 export async function searchTcgDexGermanCards(
   searchTerm: string,
-  options: { standardOnly?: boolean } = {}
+  options: { standardOnly?: boolean; page?: number } = {}
 ): Promise<CardSearchResponse> {
   const briefCards = await searchTcgDexGermanCardBriefs(searchTerm, options);
   const cardResults = await Promise.allSettled(
@@ -204,5 +206,7 @@ export async function searchTcgDexGermanCards(
   return {
     cards,
     totalCount: cards.length,
+    page: Math.max(1, Math.floor(options.page ?? 1)),
+    hasMore: briefCards.length === CARD_RESULTS_PER_PAGE,
   };
 }

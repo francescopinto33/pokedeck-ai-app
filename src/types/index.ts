@@ -45,6 +45,8 @@ export type CardAttack = {
   export type CardSearchResponse = {
     cards: Card[];
     totalCount: number;
+    page: number;
+    hasMore: boolean;
   };
   
   export type DeckCard = {
