@@ -72,4 +72,5 @@ export type CardAttack = {
     isValid: boolean;
     totalCards: number;
     errors: string[];
+    warnings: string[];
   };

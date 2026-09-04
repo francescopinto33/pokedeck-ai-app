@@ -2,6 +2,7 @@ import type { Card, Deck, ValidationResult } from "@/types";
 
 export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
   const errors: string[] = [];
+  const warnings: string[] = [];
   const totalCards = deck.cards.reduce((sum, entry) => sum + entry.count, 0);
 
   if (totalCards !== 60) {
@@ -69,5 +70,6 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
     isValid: errors.length === 0,
     totalCards,
     errors,
+    warnings,
   };
 }
