@@ -63,6 +63,9 @@ export default function CardsPage() {
   const [importAmounts, setImportAmounts] = useState<Record<string, number>>(
     {}
   );
+  const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(
+    new Set()
+  );
   const [collectionMessage, setCollectionMessage] = useState("");
 
   const filteredCards = useMemo(() => {
@@ -129,6 +132,7 @@ export default function CardsPage() {
     setIsSearchingExternal(true);
     setExternalError("");
     setExternalResult(null);
+    setSelectedCardIds(new Set());
 
     try {
       setExternalResult(await fetchExternalCards(1));
@@ -180,6 +184,20 @@ export default function CardsPage() {
       ...currentAmounts,
       [cardId]: amount,
     }));
+  }
+
+  function toggleCardSelection(cardId: string) {
+    setSelectedCardIds((currentCardIds) => {
+      const nextCardIds = new Set(currentCardIds);
+
+      if (nextCardIds.has(cardId)) {
+        nextCardIds.delete(cardId);
+      } else {
+        nextCardIds.add(cardId);
+      }
+
+      return nextCardIds;
+    });
   }
 
   function handleAddToCollection(card: Card) {
@@ -314,9 +332,23 @@ export default function CardsPage() {
                     />
                   </div>
                 ) : null}
-                <h3 className="text-lg font-semibold text-slate-900">
-                  {card.name}
-                </h3>
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {card.name}
+                  </h3>
+                  <label
+                    htmlFor={`select-card-${card.id}`}
+                    className="flex shrink-0 items-center gap-2 text-sm text-slate-700"
+                  >
+                    <input
+                      id={`select-card-${card.id}`}
+                      type="checkbox"
+                      checked={selectedCardIds.has(card.id)}
+                      onChange={() => toggleCardSelection(card.id)}
+                    />
+                    Auswählen
+                  </label>
+                </div>
                 <div className="mt-3 space-y-1 text-sm text-slate-600">
                   <p>
                     <span className="font-medium text-slate-800">Typ:</span>{" "}
