@@ -28,6 +28,7 @@ export default function CollectionPage() {
   const [allCards, setAllCards] = useState<Card[]>([]);
   const [search, setSearch] = useState("");
   const [cardFilter, setCardFilter] = useState<CollectionCardFilter>("All");
+  const [showOwnedOnly, setShowOwnedOnly] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [importPreview, setImportPreview] = useState<{
     entries: CollectionEntry[];
@@ -148,10 +149,13 @@ export default function CollectionPage() {
         !normalizedSearch || card.name.toLowerCase().includes(normalizedSearch);
       const matchesCardType =
         cardFilter === "All" || card.supertype === cardFilter;
+      const matchesCollection =
+        !showOwnedOnly ||
+        entries.some((entry) => entry.cardId === card.id && entry.owned > 0);
 
-      return matchesSearch && matchesCardType;
+      return matchesSearch && matchesCardType && matchesCollection;
     });
-  }, [allCards, cardFilter, search]);
+  }, [allCards, cardFilter, entries, search, showOwnedOnly]);
 
   return (
     <section className="space-y-6">
@@ -204,6 +208,19 @@ export default function CollectionPage() {
             })}
           </div>
         </fieldset>
+
+        <button
+          type="button"
+          aria-pressed={showOwnedOnly}
+          onClick={() => setShowOwnedOnly((currentValue) => !currentValue)}
+          className={
+            showOwnedOnly
+              ? "mt-4 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+              : "mt-4 rounded-lg border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          }
+        >
+          Nur vorhandene Karten
+        </button>
       </div>
 
       <div className="rounded-xl border bg-white p-6 shadow-sm">
