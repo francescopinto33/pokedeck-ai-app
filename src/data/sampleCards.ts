@@ -216,7 +216,7 @@ export const sampleCards: Card[] = [
     subtype: "Item",
     isBasicPokemon: false,
     isBasicEnergy: false,
-    legalStandard: true,
+    legalStandard: false,
   },
   {
     id: "card-021",
