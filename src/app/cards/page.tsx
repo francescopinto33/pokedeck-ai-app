@@ -216,6 +216,15 @@ export default function CardsPage() {
     const amount = importAmounts[card.id] ?? 1;
 
     addCardToCollection(card, amount);
+    setSelectedCardIds((currentCardIds) => {
+      if (!currentCardIds.has(card.id)) {
+        return currentCardIds;
+      }
+
+      const nextCardIds = new Set(currentCardIds);
+      nextCardIds.delete(card.id);
+      return nextCardIds;
+    });
     setCollectionMessage(
       `${amount}× ${card.name} wurde zur Sammlung hinzugefügt.`
     );
