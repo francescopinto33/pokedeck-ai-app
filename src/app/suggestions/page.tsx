@@ -152,6 +152,14 @@ export default function SuggestionsPage() {
                   </span>
                 </p>
 
+                <p className="mt-3 text-sm text-slate-700">
+                  Standardformat 2026: {" "}
+                  <span className="font-semibold text-slate-900">
+                    {idea.standardPokemonCount} von {idea.pokemonCount}{" "}
+                    Pokémon zugelassen
+                  </span>
+                </p>
+
                 <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-700">
                   {idea.hints.map((hint) => (
                     <li key={hint}>{hint}</li>
