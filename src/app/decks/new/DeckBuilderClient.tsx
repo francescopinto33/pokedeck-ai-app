@@ -1081,6 +1081,19 @@ export default function DeckBuilderClient() {
               ) : (
                 <p className="text-sm text-slate-600">Keine Fehler gefunden.</p>
               )}
+
+              {validationResult.warnings.length > 0 ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-sm font-semibold text-amber-900">
+                    Deck-Hinweise
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
+                    {validationResult.warnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
 
             <div className="mt-6">
