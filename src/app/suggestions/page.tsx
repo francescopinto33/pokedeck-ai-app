@@ -121,6 +121,13 @@ export default function SuggestionsPage() {
                     <li key={hint}>{hint}</li>
                   ))}
                 </ul>
+
+                <p className="mt-4 text-sm text-slate-700">
+                  Trainerkarten in deiner Sammlung: {" "}
+                  <span className="font-semibold text-slate-900">
+                    {idea.trainerCount}
+                  </span>
+                </p>
               </article>
             ))}
           </div>

@@ -19,6 +19,7 @@ export type CollectionDeckIdea = {
   basicPokemonCount: number;
   evolutionPokemonCount: number;
   basicEnergyCount: number;
+  trainerCount: number;
   readinessScore: number;
   status: "Gute Grundlage" | "Ausbaufähig" | "Erste Karten vorhanden";
   hints: string[];
@@ -26,7 +27,7 @@ export type CollectionDeckIdea = {
 
 type CollectionDeckIdeaCounts = Omit<
   CollectionDeckIdea,
-  "label" | "readinessScore" | "status" | "hints"
+  "label" | "trainerCount" | "readinessScore" | "status" | "hints"
 >;
 
 export function getCollectionDeckIdeas(
@@ -35,6 +36,7 @@ export function getCollectionDeckIdeas(
 ): CollectionDeckIdea[] {
   const ownedByCardId = new Map<string, number>();
   const countsByType = new Map<string, CollectionDeckIdeaCounts>();
+  let trainerCount = 0;
 
   for (const entry of collection) {
     ownedByCardId.set(
@@ -88,6 +90,10 @@ export function getCollectionDeckIdeas(
         getCounts(type).basicEnergyCount += owned;
       }
     }
+
+    if (card.supertype === "Trainer") {
+      trainerCount += owned;
+    }
   }
 
   return Array.from(countsByType.values())
@@ -134,6 +140,7 @@ export function getCollectionDeckIdeas(
 
       return {
         ...counts,
+        trainerCount,
         label: typeLabels[counts.type] ?? counts.type,
         readinessScore,
         status,
