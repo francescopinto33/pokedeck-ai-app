@@ -5,7 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { sampleCards } from "@/data/sampleCards";
 import { addCardToCollection } from "@/lib/storage";
-import type { Card, CardSearchResponse } from "@/types";
+import type {
+  Card,
+  CardListResolutionResponse,
+  CardSearchResponse,
+} from "@/types";
 
 type ExternalCardFilter = "All" | Card["supertype"];
 type CardSearchLanguage = "de" | "en";
@@ -47,6 +51,14 @@ function mergeCardSearchPages(
   };
 }
 
+function getCardListResolutionLabel(status: "matched" | "needsChoice" | "notFound") {
+  if (status === "matched") {
+    return "Eindeutig zugeordnet";
+  }
+
+  return status === "needsChoice" ? "Auswahl nötig" : "Nicht gefunden";
+}
+
 export default function CardsPage() {
   const [localSearch, setLocalSearch] = useState("");
   const [externalSearch, setExternalSearch] = useState("");
@@ -67,6 +79,11 @@ export default function CardsPage() {
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(
     new Set()
   );
+  const [cardListContent, setCardListContent] = useState("");
+  const [cardListResult, setCardListResult] =
+    useState<CardListResolutionResponse | null>(null);
+  const [cardListError, setCardListError] = useState("");
+  const [isResolvingCardList, setIsResolvingCardList] = useState(false);
   const [collectionMessage, setCollectionMessage] = useState("");
 
   const filteredCards = useMemo(() => {
@@ -175,6 +192,53 @@ export default function CardsPage() {
       );
     } finally {
       setIsLoadingMore(false);
+    }
+  }
+
+  async function handleResolveCardList(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!cardListContent.trim()) {
+      setCardListResult(null);
+      setCardListError("Füge mindestens eine Karte zur Liste hinzu.");
+      return;
+    }
+
+    setIsResolvingCardList(true);
+    setCardListError("");
+    setCardListResult(null);
+
+    try {
+      const response = await fetch("/api/cards/resolve-list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: cardListContent,
+          language: externalLanguage,
+          standardOnly: showStandardOnly,
+        }),
+      });
+      const result = (await response.json()) as
+        | CardListResolutionResponse
+        | { error: string };
+
+      if (!response.ok || !("items" in result)) {
+        throw new Error(
+          "error" in result
+            ? result.error
+            : "Die Kartenliste konnte gerade nicht abgeglichen werden."
+        );
+      }
+
+      setCardListResult(result);
+    } catch (error) {
+      setCardListError(
+        error instanceof Error
+          ? error.message
+          : "Die Kartenliste konnte gerade nicht abgeglichen werden."
+      );
+    } finally {
+      setIsResolvingCardList(false);
     }
   }
 
@@ -345,6 +409,72 @@ export default function CardsPage() {
               ? `${externalResult.cards.length} Karten geladen. ${filteredExternalCards.length} werden mit den gewählten Filtern angezeigt.${externalResult.hasMore ? " Weitere Treffer können geladen werden." : ""}`
               : "Deutsche Karten sind vorausgewählt. Standardformat 2026 und alle Filter werden bei der nächsten Suche angewendet."}
         </p>
+      </div>
+
+      <div className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">
+          Eigene Kartenliste abgleichen
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Eine Karte pro Zeile, zum Beispiel <code>Glurak ex, 2</code> oder{" "}
+          <code>Feuer-Energie x 8</code>. Die aktuelle Kartensprache und der
+          Standardformat-Filter werden berücksichtigt.
+        </p>
+        <form className="mt-4" onSubmit={handleResolveCardList}>
+          <label
+            htmlFor="card-list-import"
+            className="mb-2 block text-sm font-medium text-slate-700"
+          >
+            Kartenliste
+          </label>
+          <textarea
+            id="card-list-import"
+            value={cardListContent}
+            onChange={(event) => setCardListContent(event.target.value)}
+            placeholder={"Glurak ex, 2\nFeuer-Energie x 8"}
+            rows={6}
+            className="w-full rounded-lg border px-3 py-2 font-mono text-sm outline-none focus:ring-2 focus:ring-slate-300"
+          />
+          <button
+            type="submit"
+            disabled={isResolvingCardList}
+            className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isResolvingCardList ? "Liste wird abgeglichen …" : "Liste abgleichen"}
+          </button>
+        </form>
+
+        {cardListError ? (
+          <p aria-live="polite" className="mt-3 text-sm text-red-700">
+            {cardListError}
+          </p>
+        ) : null}
+
+        {cardListResult ? (
+          <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-700">
+            <p className="font-medium text-slate-900">
+              {cardListResult.items.length} Kartenarten geprüft.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {cardListResult.items.map((item) => (
+                <li key={item.name}>
+                  <span className="font-medium">{item.amount}× {item.name}:</span>{" "}
+                  {getCardListResolutionLabel(item.status)}
+                  {item.status === "matched" && item.candidates[0]
+                    ? ` · ${item.candidates[0].setName ?? "Set unbekannt"}`
+                    : ""}
+                </li>
+              ))}
+            </ul>
+            {cardListResult.errors.length > 0 ? (
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-amber-700">
+                {cardListResult.errors.map((error) => (
+                  <li key={error}>{error}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {externalResult && filteredExternalCards.length === 0 ? (
