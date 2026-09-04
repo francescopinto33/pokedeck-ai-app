@@ -114,6 +114,19 @@ export default function DecksPage() {
                           ))}
                         </ul>
                       ) : null}
+
+                      {validation.warnings.length > 0 ? (
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                          <p className="text-sm font-semibold text-amber-900">
+                            Deck-Hinweise
+                          </p>
+                          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
+                            {validation.warnings.map((warning) => (
+                              <li key={warning}>{warning}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="rounded-lg border bg-slate-50 p-4">
