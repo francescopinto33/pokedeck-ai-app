@@ -18,6 +18,7 @@ export type CollectionDeckIdea = {
   pokemonCount: number;
   basicPokemonCount: number;
   evolutionPokemonCount: number;
+  supportedEvolutionPokemonCount: number;
   basicEnergyCount: number;
   trainerCount: number;
   readinessScore: number;
@@ -35,6 +36,7 @@ export function getCollectionDeckIdeas(
   allCards: Card[]
 ): CollectionDeckIdea[] {
   const ownedByCardId = new Map<string, number>();
+  const ownedPokemonByName = new Map<string, number>();
   const countsByType = new Map<string, CollectionDeckIdeaCounts>();
   let trainerCount = 0;
 
@@ -43,6 +45,17 @@ export function getCollectionDeckIdeas(
       entry.cardId,
       (ownedByCardId.get(entry.cardId) ?? 0) + entry.owned
     );
+  }
+
+  for (const card of allCards) {
+    const owned = ownedByCardId.get(card.id) ?? 0;
+
+    if (card.supertype === "Pokemon" && owned > 0) {
+      ownedPokemonByName.set(
+        card.name,
+        (ownedPokemonByName.get(card.name) ?? 0) + owned
+      );
+    }
   }
 
   function getCounts(type: string) {
@@ -57,6 +70,7 @@ export function getCollectionDeckIdeas(
       pokemonCount: 0,
       basicPokemonCount: 0,
       evolutionPokemonCount: 0,
+      supportedEvolutionPokemonCount: 0,
       basicEnergyCount: 0,
     };
     countsByType.set(type, newCounts);
@@ -81,6 +95,13 @@ export function getCollectionDeckIdeas(
           counts.basicPokemonCount += owned;
         } else {
           counts.evolutionPokemonCount += owned;
+
+          if (card.evolvesFrom) {
+            counts.supportedEvolutionPokemonCount += Math.min(
+              owned,
+              ownedPokemonByName.get(card.evolvesFrom) ?? 0
+            );
+          }
         }
       }
     }

@@ -133,6 +133,15 @@ export default function SuggestionsPage() {
                   </div>
                 </dl>
 
+                {idea.evolutionPokemonCount > 0 ? (
+                  <p className="mt-3 text-sm text-slate-700">
+                    Durch Vorstufen gestützt: {" "}
+                    <span className="font-semibold text-slate-900">
+                      {idea.supportedEvolutionPokemonCount} von {idea.evolutionPokemonCount}
+                    </span>
+                  </p>
+                ) : null}
+
                 <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-700">
                   {idea.hints.map((hint) => (
                     <li key={hint}>{hint}</li>
