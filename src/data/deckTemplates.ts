@@ -1,10 +1,11 @@
-import type { DeckCard } from "@/types";
+import type { DeckCard, DeckFormat } from "@/types";
 
 export type DeckTemplate = {
   id: string;
   name: string;
   description: string;
   focus: string;
+  format: DeckFormat;
   cards: DeckCard[];
 };
 
@@ -28,6 +29,7 @@ export const deckTemplates: DeckTemplate[] = [
     description:
       "Eine einfache Feuer-Vorlage mit einer vollständigen Charizard-Entwicklungsreihe.",
     focus: "Feuer",
+    format: "free",
     cards: [
       { cardId: "card-001", count: 4 },
       { cardId: "card-002", count: 3 },
@@ -42,6 +44,7 @@ export const deckTemplates: DeckTemplate[] = [
     description:
       "Eine einfache Wasser-Vorlage mit einer vollständigen Blastoise-Entwicklungsreihe.",
     focus: "Wasser",
+    format: "free",
     cards: [
       { cardId: "card-004", count: 4 },
       { cardId: "card-005", count: 3 },
@@ -56,6 +59,7 @@ export const deckTemplates: DeckTemplate[] = [
     description:
       "Eine einfache Pflanzen-Vorlage mit einer vollständigen Venusaur-Entwicklungsreihe.",
     focus: "Pflanze",
+    format: "free",
     cards: [
       { cardId: "card-007", count: 4 },
       { cardId: "card-008", count: 3 },

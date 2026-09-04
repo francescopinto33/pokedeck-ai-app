@@ -137,7 +137,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName(selectedTemplate.name);
       setDeckCards(selectedTemplate.cards.map((entry) => ({ ...entry })));
-      setDeckFormat("free");
+      setDeckFormat(selectedTemplate.format);
       setIsDraftDirty(false);
       setHasDraft(false);
       setDraftMessage("Startervorlage geladen. Passe sie bei Bedarf an.");
@@ -415,7 +415,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName(selectedTemplate?.name ?? "");
       setDeckCards(selectedTemplate?.cards.map((entry) => ({ ...entry })) ?? []);
-      setDeckFormat("free");
+      setDeckFormat(selectedTemplate?.format ?? "free");
       if (selectedTemplate) {
         setDraftMessage("Startervorlage erneut geladen.");
       }

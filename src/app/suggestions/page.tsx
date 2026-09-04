@@ -34,8 +34,9 @@ export default function SuggestionsPage() {
         </h1>
         <p className="mt-2 text-slate-600">
           Die Auswertung erkennt zuerst die stärksten Typ-Ansätze in deinen
-          echten Karten. Zusätzlich vergleicht sie regelkonforme
-          Startervorlagen mit deinen exakten Karten und Mengen.
+          echten Karten. Zusätzlich vergleicht sie vollständige
+          Startervorlagen im angegebenen Format mit deinen exakten Karten und
+          Mengen.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
@@ -145,6 +146,11 @@ export default function SuggestionsPage() {
               <div>
                 <p className="text-sm font-medium text-slate-500">
                   Fokus: {suggestion.focus}
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-500">
+                  {suggestion.format === "standard-2026"
+                    ? "Standardformat 2026"
+                    : "Freies Deck"}
                 </p>
                 <h2 className="mt-1 text-lg font-semibold text-slate-900">
                   {suggestion.name}
