@@ -132,9 +132,11 @@ export function getCollectionDeckIdeas(
     .filter((counts) => counts.pokemonCount > 0)
     .map((counts) => {
       const { missingEvolutionHints, ...ideaCounts } = counts;
+      const playablePokemonCount =
+        counts.basicPokemonCount + counts.supportedEvolutionPokemonCount;
       const readinessScore = Math.min(
         100,
-        Math.min(30, counts.pokemonCount * 3) +
+        Math.min(30, playablePokemonCount * 3) +
           Math.min(25, counts.basicPokemonCount * 6) +
           Math.min(20, counts.basicEnergyCount * 2) +
           Math.min(25, trainerCount * 2.5)
