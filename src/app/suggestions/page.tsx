@@ -186,6 +186,14 @@ export default function SuggestionsPage() {
                   >
                     {idea.label}-Sammlung prüfen
                   </Link>
+                  {idea.standardPokemonCount > 0 ? (
+                    <Link
+                      href={`/decks/new?focusType=${encodeURIComponent(idea.type)}&format=standard-2026`}
+                      className="rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                      Standard 2026 im Builder öffnen
+                    </Link>
+                  ) : null}
                 </div>
               </article>
             ))}
