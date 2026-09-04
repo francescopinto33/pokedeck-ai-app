@@ -11,6 +11,7 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
   let hasBasicPokemon = false;
   let aceSpecCount = 0;
   const cardCountsByName = new Map<string, number>();
+  const nonStandardCardNames = new Set<string>();
 
   for (const entry of deck.cards) {
     const card = allCards.find((item) => item.id === entry.cardId);
@@ -34,6 +35,10 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
     if (card.isAceSpec || card.subtype?.includes("ACE SPEC")) {
       aceSpecCount += entry.count;
     }
+
+    if (deck.format === "standard-2026" && !card.legalStandard) {
+      nonStandardCardNames.add(card.name);
+    }
   }
 
   for (const [cardName, count] of cardCountsByName) {
@@ -47,6 +52,12 @@ export function validateDeck(deck: Deck, allCards: Card[]): ValidationResult {
   if (aceSpecCount > 1) {
     errors.push(
       `Es sind ${aceSpecCount} ASS-KLASSE-Karten enthalten. Maximal 1 ASS-KLASSE-Karte ist erlaubt.`
+    );
+  }
+
+  for (const cardName of nonStandardCardNames) {
+    errors.push(
+      `${cardName} ist nicht im Standardformat 2026 zugelassen.`
     );
   }
 

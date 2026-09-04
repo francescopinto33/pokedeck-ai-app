@@ -322,12 +322,13 @@ export default function DeckBuilderClient() {
       id: deckId ?? "temporary-deck",
       name: deckName || "Unbenanntes Deck",
       cards: deckCards,
+      format: deckFormat,
       createdAt: createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     return validateDeck(deckToValidate, allCards);
-  }, [allCards, createdAt, deckCards, deckId, deckName]);
+  }, [allCards, createdAt, deckCards, deckFormat, deckId, deckName]);
 
   const collectionComparison = useMemo(() => {
     const deckToCompare: Deck = {
