@@ -29,7 +29,9 @@ export type CollectionDeckIdea = {
 type CollectionDeckIdeaCounts = Omit<
   CollectionDeckIdea,
   "label" | "trainerCount" | "readinessScore" | "status" | "hints"
->;
+> & {
+  missingEvolutionHints: string[];
+};
 
 export function getCollectionDeckIdeas(
   collection: CollectionEntry[],
@@ -72,6 +74,7 @@ export function getCollectionDeckIdeas(
       evolutionPokemonCount: 0,
       supportedEvolutionPokemonCount: 0,
       basicEnergyCount: 0,
+      missingEvolutionHints: [],
     };
     countsByType.set(type, newCounts);
     return newCounts;
@@ -97,10 +100,18 @@ export function getCollectionDeckIdeas(
           counts.evolutionPokemonCount += owned;
 
           if (card.evolvesFrom) {
+            const previousStageCount =
+              ownedPokemonByName.get(card.evolvesFrom) ?? 0;
             counts.supportedEvolutionPokemonCount += Math.min(
               owned,
-              ownedPokemonByName.get(card.evolvesFrom) ?? 0
+              previousStageCount
             );
+
+            if (previousStageCount < owned) {
+              counts.missingEvolutionHints.push(
+                `Noch ${owned - previousStageCount} ${card.evolvesFrom} für ${card.name} ergänzen.`
+              );
+            }
           }
         }
       }
@@ -120,6 +131,7 @@ export function getCollectionDeckIdeas(
   return Array.from(countsByType.values())
     .filter((counts) => counts.pokemonCount > 0)
     .map((counts) => {
+      const { missingEvolutionHints, ...ideaCounts } = counts;
       const readinessScore = Math.min(
         100,
         Math.min(30, counts.pokemonCount * 3) +
@@ -153,6 +165,8 @@ export function getCollectionDeckIdeas(
         );
       }
 
+      hints.push(...Array.from(new Set(missingEvolutionHints)));
+
       if (hints.length === 0) {
         hints.push(
           "Eine solide Grundlage ist vorhanden. Als Nächstes helfen passende Trainerkarten und eine konkrete Deckliste."
@@ -167,7 +181,7 @@ export function getCollectionDeckIdeas(
             : "Erste Karten vorhanden";
 
       return {
-        ...counts,
+        ...ideaCounts,
         trainerCount,
         label: typeLabels[counts.type] ?? counts.type,
         readinessScore,
