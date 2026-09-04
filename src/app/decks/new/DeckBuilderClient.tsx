@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getDeckTemplateById } from "@/data/deckTemplates";
 import { getAvailableCards } from "@/lib/availableCards";
 import { compareDeckToCollection } from "@/lib/compareDeckToCollection";
 import {
@@ -64,10 +65,20 @@ function getOpeningBasicPokemonChance(basicPokemon: number, totalCards: number) 
   return Math.round((1 - chanceWithoutBasicPokemon) * 100);
 }
 
+function getDraftKey(deckId: string | null, templateId: string | null) {
+  if (deckId) {
+    return "deck-" + deckId;
+  }
+
+  return templateId ? "template-" + templateId : "new";
+}
+
 export default function DeckBuilderClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const deckIdFromUrl = searchParams.get("id");
+  const templateIdFromUrl = searchParams.get("template");
+  const selectedTemplate = getDeckTemplateById(templateIdFromUrl);
 
   const [deckId, setDeckId] = useState<string | null>(null);
   const [createdAt, setCreatedAt] = useState<string>("");
@@ -94,7 +105,7 @@ export default function DeckBuilderClient() {
     setIsDiscardConfirmationVisible(false);
     setDraftMessage("");
 
-    const draftKey = deckIdFromUrl ? "deck-" + deckIdFromUrl : "new";
+    const draftKey = getDraftKey(deckIdFromUrl, templateIdFromUrl);
     const existingDraft = getDeckDraft(draftKey);
 
     if (existingDraft) {
@@ -105,6 +116,20 @@ export default function DeckBuilderClient() {
       setIsDraftDirty(false);
       setHasDraft(true);
       setDraftMessage("Entwurf lokal wiederhergestellt.");
+      return;
+    }
+
+    if (!deckIdFromUrl && selectedTemplate) {
+      const newId = createDeckId();
+      const now = new Date().toISOString();
+
+      setDeckId(newId);
+      setCreatedAt(now);
+      setDeckName(selectedTemplate.name);
+      setDeckCards(selectedTemplate.cards.map((entry) => ({ ...entry })));
+      setIsDraftDirty(false);
+      setHasDraft(false);
+      setDraftMessage("Startervorlage geladen. Passe sie bei Bedarf an.");
       return;
     }
 
@@ -142,14 +167,14 @@ export default function DeckBuilderClient() {
     setDeckCards(existingDeck.cards);
     setIsDraftDirty(false);
     setHasDraft(false);
-  }, [deckIdFromUrl]);
+  }, [deckIdFromUrl, selectedTemplate, templateIdFromUrl]);
 
   useEffect(() => {
     if (!isDraftDirty || !deckId || !createdAt) {
       return;
     }
 
-    const draftKey = deckIdFromUrl ? "deck-" + deckIdFromUrl : "new";
+    const draftKey = getDraftKey(deckIdFromUrl, templateIdFromUrl);
 
     if (deckName.trim() === "" && deckCards.length === 0) {
       deleteDeckDraft(draftKey);
@@ -165,7 +190,15 @@ export default function DeckBuilderClient() {
       updatedAt: new Date().toISOString(),
     });
     setDraftMessage("Entwurf lokal gesichert.");
-  }, [createdAt, deckCards, deckId, deckIdFromUrl, deckName, isDraftDirty]);
+  }, [
+    createdAt,
+    deckCards,
+    deckId,
+    deckIdFromUrl,
+    deckName,
+    isDraftDirty,
+    templateIdFromUrl,
+  ]);
 
   const totalCards = useMemo(() => {
     return deckCards.reduce((sum, entry) => sum + entry.count, 0);
@@ -332,7 +365,7 @@ export default function DeckBuilderClient() {
   }
 
   function handleDiscardDraft() {
-    deleteDeckDraft(deckIdFromUrl ? "deck-" + deckIdFromUrl : "new");
+    deleteDeckDraft(getDraftKey(deckIdFromUrl, templateIdFromUrl));
     setIsDraftDirty(false);
     setHasDraft(false);
     setIsDiscardConfirmationVisible(false);
@@ -346,8 +379,11 @@ export default function DeckBuilderClient() {
 
       setDeckId(newId);
       setCreatedAt(now);
-      setDeckName("");
-      setDeckCards([]);
+      setDeckName(selectedTemplate?.name ?? "");
+      setDeckCards(selectedTemplate?.cards.map((entry) => ({ ...entry })) ?? []);
+      if (selectedTemplate) {
+        setDraftMessage("Startervorlage erneut geladen.");
+      }
       return;
     }
 
@@ -485,7 +521,7 @@ export default function DeckBuilderClient() {
     };
 
     upsertDeck(deckToSave);
-    deleteDeckDraft(deckIdFromUrl ? "deck-" + deckIdFromUrl : "new");
+    deleteDeckDraft(getDraftKey(deckIdFromUrl, templateIdFromUrl));
     setIsDraftDirty(false);
     setHasDraft(false);
     setIsDiscardConfirmationVisible(false);
@@ -498,7 +534,11 @@ export default function DeckBuilderClient() {
     <section className="space-y-6">
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-slate-900">
-          {deckIdFromUrl ? "Deck bearbeiten" : "Neues Deck"}
+          {deckIdFromUrl
+            ? "Deck bearbeiten"
+            : selectedTemplate
+              ? "Deckvorlage bearbeiten"
+              : "Neues Deck"}
         </h1>
         <p className="mt-2 text-slate-600">
           Erstelle ein Deck, fuege Karten hinzu und pruefe die Grundregeln live.

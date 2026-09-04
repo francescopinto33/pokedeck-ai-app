@@ -65,3 +65,7 @@ export const deckTemplates: DeckTemplate[] = [
     ],
   },
 ];
+
+export function getDeckTemplateById(id: string | null) {
+  return deckTemplates.find((template) => template.id === id);
+}

@@ -214,6 +214,12 @@ export default function SuggestionsPage() {
                 </ul>
               )}
             </details>
+            <Link
+              href={`/decks/new?template=${suggestion.id}`}
+              className="mt-4 inline-block rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Vorlage im Deck-Builder öffnen
+            </Link>
           </article>
         ))}
       </div>
