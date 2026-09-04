@@ -90,13 +90,17 @@ export default function DeckBuilderClient() {
     requestedFocusType && energyTypeLabels[requestedFocusType]
       ? requestedFocusType
       : null;
+  const requestedFormat = searchParams.get("format");
+  const requestedDeckFormat: DeckFormat =
+    requestedFormat === "standard-2026" ? "standard-2026" : "free";
   const selectedTemplate = getDeckTemplateById(templateIdFromUrl);
 
   const [deckId, setDeckId] = useState<string | null>(null);
   const [createdAt, setCreatedAt] = useState<string>("");
   const [deckName, setDeckName] = useState("");
   const [deckCards, setDeckCards] = useState<DeckCard[]>([]);
-  const [deckFormat, setDeckFormat] = useState<DeckFormat>("free");
+  const [deckFormat, setDeckFormat] =
+    useState<DeckFormat>(requestedDeckFormat);
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
   const [allCards, setAllCards] = useState<Card[]>([]);
   const [collectionMessage, setCollectionMessage] = useState("");
@@ -106,7 +110,9 @@ export default function DeckBuilderClient() {
   const [cardFilter, setCardFilter] = useState<CardFilter>("All");
   const [isFocusActive, setIsFocusActive] = useState(focusType !== null);
   const [showOwnedOnly, setShowOwnedOnly] = useState(focusType !== null);
-  const [showStandardOnly, setShowStandardOnly] = useState(false);
+  const [showStandardOnly, setShowStandardOnly] = useState(
+    requestedDeckFormat === "standard-2026"
+  );
   const [isDraftDirty, setIsDraftDirty] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [draftMessage, setDraftMessage] = useState("");
@@ -129,6 +135,7 @@ export default function DeckBuilderClient() {
       setDeckName(existingDraft.name);
       setDeckCards(existingDraft.cards);
       setDeckFormat(existingDraft.format ?? "free");
+      setShowStandardOnly(false);
       setIsDraftDirty(false);
       setHasDraft(true);
       setDraftMessage("Entwurf lokal wiederhergestellt.");
@@ -144,6 +151,7 @@ export default function DeckBuilderClient() {
       setDeckName(selectedTemplate.name);
       setDeckCards(selectedTemplate.cards.map((entry) => ({ ...entry })));
       setDeckFormat(selectedTemplate.format);
+      setShowStandardOnly(false);
       setIsDraftDirty(false);
       setHasDraft(false);
       setDraftMessage("Startervorlage geladen. Passe sie bei Bedarf an.");
@@ -158,7 +166,8 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName("");
       setDeckCards([]);
-      setDeckFormat("free");
+      setDeckFormat(requestedDeckFormat);
+      setShowStandardOnly(requestedDeckFormat === "standard-2026");
       setIsDraftDirty(false);
       setHasDraft(false);
       return;
@@ -174,7 +183,8 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName("");
       setDeckCards([]);
-      setDeckFormat("free");
+      setDeckFormat(requestedDeckFormat);
+      setShowStandardOnly(requestedDeckFormat === "standard-2026");
       setIsDraftDirty(false);
       setHasDraft(false);
       return;
@@ -185,9 +195,15 @@ export default function DeckBuilderClient() {
     setDeckName(existingDeck.name);
     setDeckCards(existingDeck.cards);
     setDeckFormat(existingDeck.format ?? "free");
+    setShowStandardOnly(false);
     setIsDraftDirty(false);
     setHasDraft(false);
-  }, [deckIdFromUrl, selectedTemplate, templateIdFromUrl]);
+  }, [
+    deckIdFromUrl,
+    requestedDeckFormat,
+    selectedTemplate,
+    templateIdFromUrl,
+  ]);
 
   useEffect(() => {
     if (!isDraftDirty || !deckId || !createdAt) {
@@ -719,7 +735,9 @@ export default function DeckBuilderClient() {
             <option value="standard-2026">Standardformat 2026</option>
           </select>
           <p className="mt-1 text-sm text-slate-500">
-            Freie Decks dürfen auch ältere Karten enthalten.
+            {deckFormat === "standard-2026"
+              ? "Im Standardformat werden nicht zugelassene Karten als Fehler markiert."
+              : "Freie Decks dürfen auch ältere Karten enthalten."}
           </p>
         </div>
       </div>
