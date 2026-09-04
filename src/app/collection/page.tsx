@@ -18,6 +18,17 @@ import {
 import type { Card, CollectionEntry } from "@/types";
 
 type CollectionCardFilter = "All" | Card["supertype"];
+type CollectionPokemonType =
+  | "Grass"
+  | "Fire"
+  | "Water"
+  | "Lightning"
+  | "Psychic"
+  | "Fighting"
+  | "Darkness"
+  | "Metal"
+  | "Dragon"
+  | "Colorless";
 
 const collectionCardFilterOptions: Array<{
   value: CollectionCardFilter;
@@ -41,11 +52,30 @@ const collectionFocusTypeLabels: Record<string, string> = {
   Dragon: "Drache",
 };
 
+const collectionPokemonTypeOptions: Array<{
+  value: CollectionPokemonType;
+  label: string;
+  className: string;
+}> = [
+  { value: "Grass", label: "Pflanze", className: "bg-green-600 hover:bg-green-700" },
+  { value: "Fire", label: "Feuer", className: "bg-red-600 hover:bg-red-700" },
+  { value: "Water", label: "Wasser", className: "bg-blue-600 hover:bg-blue-700" },
+  { value: "Lightning", label: "Elektro", className: "bg-yellow-400 text-slate-900 hover:bg-yellow-500" },
+  { value: "Psychic", label: "Psycho", className: "bg-purple-600 hover:bg-purple-700" },
+  { value: "Fighting", label: "Kampf", className: "bg-orange-600 hover:bg-orange-700" },
+  { value: "Darkness", label: "Unlicht", className: "bg-slate-900 hover:bg-slate-800" },
+  { value: "Metal", label: "Metall", className: "bg-slate-500 hover:bg-slate-600" },
+  { value: "Dragon", label: "Drache", className: "bg-amber-600 hover:bg-amber-700" },
+  { value: "Colorless", label: "Farblos", className: "bg-stone-300 text-slate-900 hover:bg-stone-400" },
+];
+
 export default function CollectionPage() {
   const [entries, setEntries] = useState<CollectionEntry[]>([]);
   const [allCards, setAllCards] = useState<Card[]>([]);
   const [search, setSearch] = useState("");
   const [cardFilter, setCardFilter] = useState<CollectionCardFilter>("All");
+  const [pokemonTypeFilter, setPokemonTypeFilter] =
+    useState<CollectionPokemonType | null>(null);
   const [focusType, setFocusType] = useState<string | null>(null);
   const [isFocusActive, setIsFocusActive] = useState(false);
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
@@ -109,6 +139,19 @@ export default function CollectionPage() {
   function handleSaveCollection() {
     saveCollection(entries);
     setSaveMessage("Sammlung wurde gespeichert.");
+  }
+
+  function handleCardFilterChange(nextFilter: CollectionCardFilter) {
+    setCardFilter(nextFilter);
+
+    if (nextFilter !== "Pokemon") {
+      setPokemonTypeFilter(null);
+    }
+  }
+
+  function handlePokemonTypeFilterChange(nextType: CollectionPokemonType | null) {
+    setPokemonTypeFilter(nextType);
+    setCardFilter("Pokemon");
   }
 
   async function handleCsvFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -181,6 +224,10 @@ export default function CollectionPage() {
         !normalizedSearch || card.name.toLowerCase().includes(normalizedSearch);
       const matchesCardType =
         cardFilter === "All" || card.supertype === cardFilter;
+      const matchesPokemonType =
+        !pokemonTypeFilter ||
+        (card.supertype === "Pokemon" &&
+          card.types?.includes(pokemonTypeFilter));
       const matchesCollection =
         !showOwnedOnly ||
         entries.some((entry) => entry.cardId === card.id && entry.owned > 0);
@@ -193,6 +240,7 @@ export default function CollectionPage() {
       return (
         matchesSearch &&
         matchesCardType &&
+        matchesPokemonType &&
         matchesCollection &&
         matchesFocusType
       );
@@ -203,6 +251,7 @@ export default function CollectionPage() {
     entries,
     focusType,
     isFocusActive,
+    pokemonTypeFilter,
     search,
     showOwnedOnly,
   ]);
@@ -214,12 +263,14 @@ export default function CollectionPage() {
   const hasActiveFilters =
     search.trim() !== "" ||
     cardFilter !== "All" ||
+    pokemonTypeFilter !== null ||
     showOwnedOnly ||
     isFocusActive;
 
   function resetCollectionFilters() {
     setSearch("");
     setCardFilter("All");
+    setPokemonTypeFilter(null);
     setIsFocusActive(false);
     setShowOwnedOnly(false);
   }
@@ -262,11 +313,53 @@ export default function CollectionPage() {
                   key={option.value}
                   type="button"
                   aria-pressed={isActive}
-                  onClick={() => setCardFilter(option.value)}
+                  onClick={() => handleCardFilterChange(option.value)}
                   className={
                     isActive
                       ? "rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
                       : "rounded-lg border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  }
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <fieldset className="mt-4">
+          <legend className="mb-1 text-sm font-medium text-slate-700">
+            Pokémon-Typ
+          </legend>
+          <p className="mb-2 text-sm text-slate-500">
+            Zeigt nur Pokémon des gewählten Typs.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              aria-pressed={pokemonTypeFilter === null}
+              onClick={() => handlePokemonTypeFilterChange(null)}
+              className={
+                pokemonTypeFilter === null
+                  ? "rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white ring-2 ring-slate-300"
+                  : "rounded-lg border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              }
+            >
+              Alle Typen
+            </button>
+            {collectionPokemonTypeOptions.map((option) => {
+              const isActive = pokemonTypeFilter === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => handlePokemonTypeFilterChange(option.value)}
+                  className={
+                    "rounded-lg px-3 py-2 text-sm font-medium text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 " +
+                    option.className +
+                    (isActive ? " ring-2 ring-slate-900 ring-offset-2" : "")
                   }
                 >
                   {option.label}
