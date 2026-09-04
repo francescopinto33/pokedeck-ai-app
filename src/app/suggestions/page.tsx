@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getAvailableCards } from "@/lib/availableCards";
+import { getCollectionDeckIdeas } from "@/lib/collectionDeckIdeas";
 import { getDeckSuggestions } from "@/lib/deckSuggestions";
 import { getCollection } from "@/lib/storage";
 import type { Card, CollectionEntry } from "@/types";
@@ -20,6 +21,10 @@ export default function SuggestionsPage() {
     () => getDeckSuggestions(collection, allCards),
     [allCards, collection]
   );
+  const collectionDeckIdeas = useMemo(
+    () => getCollectionDeckIdeas(collection, allCards),
+    [allCards, collection]
+  );
 
   return (
     <section className="space-y-6">
@@ -28,10 +33,9 @@ export default function SuggestionsPage() {
           Deckvorschläge aus deiner Sammlung
         </h1>
         <p className="mt-2 text-slate-600">
-          Diese erste Vorschlagsversion vergleicht regelkonforme
-          Startervorlagen mit deinen exakten Karten und Mengen. So siehst du
-          direkt, welches Deck deiner Sammlung am nächsten ist und was noch
-          fehlt.
+          Die Auswertung erkennt zuerst die stärksten Typ-Ansätze in deinen
+          echten Karten. Zusätzlich vergleicht sie regelkonforme
+          Startervorlagen mit deinen exakten Karten und Mengen.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
@@ -47,6 +51,88 @@ export default function SuggestionsPage() {
             Karten suchen
           </Link>
         </div>
+      </div>
+
+      <div className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-slate-900">
+          Deine stärksten Deck-Ansätze
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Diese Einschätzung basiert auf deinen vorhandenen Pokémon und
+          passenden Basis-Energien. Sie ist eine Orientierung, noch keine
+          automatisch erzeugte Deckliste.
+        </p>
+
+        {collectionDeckIdeas.length === 0 ? (
+          <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-700">
+            Füge echte Pokémon-Karten und passende Basis-Energien zu deiner
+            Sammlung hinzu, damit persönliche Deck-Ansätze erscheinen.
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {collectionDeckIdeas.map((idea) => (
+              <article key={idea.type} className="rounded-lg border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-slate-500">Typ-Ansatz</p>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {idea.label}
+                    </h3>
+                  </div>
+                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                    {idea.status}
+                  </span>
+                </div>
+
+                <p className="mt-3 text-sm font-medium text-slate-800">
+                  Grundlage: {idea.readinessScore} %
+                </p>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-slate-900"
+                    style={{ width: `${idea.readinessScore}%` }}
+                  />
+                </div>
+
+                <dl className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
+                  <div className="rounded bg-slate-50 p-2">
+                    <dt className="text-slate-500">Pokémon</dt>
+                    <dd className="mt-1 font-semibold text-slate-900">
+                      {idea.pokemonCount}
+                    </dd>
+                  </div>
+                  <div className="rounded bg-slate-50 p-2">
+                    <dt className="text-slate-500">Basis</dt>
+                    <dd className="mt-1 font-semibold text-slate-900">
+                      {idea.basicPokemonCount}
+                    </dd>
+                  </div>
+                  <div className="rounded bg-slate-50 p-2">
+                    <dt className="text-slate-500">Energie</dt>
+                    <dd className="mt-1 font-semibold text-slate-900">
+                      {idea.basicEnergyCount}
+                    </dd>
+                  </div>
+                </dl>
+
+                <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                  {idea.hints.map((hint) => (
+                    <li key={hint}>{hint}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold text-slate-900">
+          Startervorlagen
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Vergleiche deine Sammlung mit vollständigen 60-Karten-Vorlagen.
+        </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
