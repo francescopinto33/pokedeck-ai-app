@@ -8,6 +8,7 @@ import { addCardToCollection } from "@/lib/storage";
 import { validateCardPhotoFiles } from "@/lib/cardPhotoImport";
 import type {
   Card,
+  CardPhotoRecognitionResponse,
   CardListResolutionResponse,
   CardSearchResponse,
 } from "@/types";
@@ -95,6 +96,9 @@ export default function CardsPage() {
   const [isResolvingCardList, setIsResolvingCardList] = useState(false);
   const [cardPhotos, setCardPhotos] = useState<SelectedCardPhoto[]>([]);
   const [cardPhotoError, setCardPhotoError] = useState("");
+  const [cardPhotoRecognition, setCardPhotoRecognition] =
+    useState<CardPhotoRecognitionResponse | null>(null);
+  const [isRecognizingCardPhotos, setIsRecognizingCardPhotos] = useState(false);
   const cardPhotosRef = useRef<SelectedCardPhoto[]>([]);
   const [collectionMessage, setCollectionMessage] = useState("");
 
@@ -264,37 +268,7 @@ export default function CardsPage() {
     setCardListChoices({});
 
     try {
-      const response = await fetch("/api/cards/resolve-list", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: cardListContent,
-          language: externalLanguage,
-          standardOnly: showStandardOnly,
-        }),
-      });
-      const result = (await response.json()) as
-        | CardListResolutionResponse
-        | { error: string };
-
-      if (!response.ok || !("items" in result)) {
-        throw new Error(
-          "error" in result
-            ? result.error
-            : "Die Kartenliste konnte gerade nicht abgeglichen werden."
-        );
-      }
-
-      const initialChoices: Record<string, string> = {};
-
-      result.items.forEach((item, index) => {
-        if (item.status === "matched" && item.candidates[0]) {
-          initialChoices[String(index)] = item.candidates[0].id;
-        }
-      });
-
-      setCardListChoices(initialChoices);
-      setCardListResult(result);
+      await resolveCardListContent(cardListContent);
     } catch (error) {
       setCardListError(
         error instanceof Error
@@ -304,6 +278,40 @@ export default function CardsPage() {
     } finally {
       setIsResolvingCardList(false);
     }
+  }
+
+  async function resolveCardListContent(content: string) {
+    const response = await fetch("/api/cards/resolve-list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          language: externalLanguage,
+          standardOnly: showStandardOnly,
+        }),
+      });
+    const result = (await response.json()) as
+      | CardListResolutionResponse
+      | { error: string };
+
+    if (!response.ok || !("items" in result)) {
+      throw new Error(
+        "error" in result
+          ? result.error
+          : "Die Kartenliste konnte gerade nicht abgeglichen werden."
+      );
+    }
+
+    const initialChoices: Record<string, string> = {};
+
+    result.items.forEach((item, index) => {
+      if (item.status === "matched" && item.candidates[0]) {
+        initialChoices[String(index)] = item.candidates[0].id;
+      }
+    });
+
+    setCardListChoices(initialChoices);
+    setCardListResult(result);
   }
 
   function setImportAmount(cardId: string, value: string) {
@@ -431,6 +439,65 @@ export default function CardsPage() {
     );
     cardPhotosRef.current = nextPhotos;
     setCardPhotos(nextPhotos);
+  }
+
+  async function handleRecognizeCardPhotos() {
+    if (cardPhotos.length === 0) {
+      setCardPhotoError("Wähle zuerst mindestens ein Kartenfoto aus.");
+      return;
+    }
+
+    setIsRecognizingCardPhotos(true);
+    setCardPhotoError("");
+    setCardPhotoRecognition(null);
+    setCardListError("");
+
+    try {
+      const formData = new FormData();
+      cardPhotos.forEach((photo) => formData.append("photos", photo.file));
+
+      const response = await fetch("/api/cards/recognize-photo", {
+        method: "POST",
+        body: formData,
+      });
+      const result = (await response.json()) as
+        | CardPhotoRecognitionResponse
+        | { error: string };
+
+      if (!response.ok || !("cards" in result)) {
+        throw new Error(
+          "error" in result
+            ? result.error
+            : "Die Kartenfotos konnten gerade nicht erkannt werden."
+        );
+      }
+
+      setCardPhotoRecognition(result);
+
+      if (result.cards.length === 0) {
+        setCardPhotoError(
+          "Auf den Fotos konnte keine Karte sicher gelesen werden. Probiere ein schärferes Foto der Kartenfront."
+        );
+        return;
+      }
+
+      const recognizedList = result.cards
+        .map((card) => `${card.name}, ${card.amount}`)
+        .join("\n");
+
+      setCardListContent(recognizedList);
+      setIsResolvingCardList(true);
+      await resolveCardListContent(recognizedList);
+    } catch (error) {
+      setCardPhotoError(
+        error instanceof Error
+          ? error.message
+          : "Die Kartenfotos konnten gerade nicht erkannt werden."
+      );
+    } finally {
+      setIsRecognizingCardPhotos(false);
+      setIsResolvingCardList(false);
+    }
   }
 
   return (
@@ -669,30 +736,64 @@ export default function CardsPage() {
           </p>
         ) : null}
         {cardPhotos.length > 0 ? (
-          <ul className="mt-4 grid gap-3 sm:grid-cols-3">
-            {cardPhotos.map((photo) => (
-              <li key={photo.previewUrl} className="rounded-lg border p-2">
-                <Image
-                  src={photo.previewUrl}
-                  alt={`Vorschau: ${photo.file.name}`}
-                  width={160}
-                  height={224}
-                  unoptimized
-                  className="h-40 w-full rounded object-contain"
-                />
-                <p className="mt-2 truncate text-sm font-medium text-slate-800">
-                  {photo.file.name}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => removeCardPhoto(photo.previewUrl)}
-                  className="mt-2 text-sm font-medium text-slate-700 underline hover:text-slate-900"
-                >
-                  Entfernen
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+              {cardPhotos.map((photo) => (
+                <li key={photo.previewUrl} className="rounded-lg border p-2">
+                  <Image
+                    src={photo.previewUrl}
+                    alt={`Vorschau: ${photo.file.name}`}
+                    width={160}
+                    height={224}
+                    unoptimized
+                    className="h-40 w-full rounded object-contain"
+                  />
+                  <p className="mt-2 truncate text-sm font-medium text-slate-800">
+                    {photo.file.name}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => removeCardPhoto(photo.previewUrl)}
+                    className="mt-2 text-sm font-medium text-slate-700 underline hover:text-slate-900"
+                  >
+                    Entfernen
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={handleRecognizeCardPhotos}
+              disabled={isRecognizingCardPhotos}
+              className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isRecognizingCardPhotos
+                ? "Kartenfotos werden erkannt …"
+                : "Kartenfotos erkennen"}
+            </button>
+          </>
+        ) : null}
+        {cardPhotoRecognition ? (
+          <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-700">
+            <p className="font-medium text-slate-900">
+              {cardPhotoRecognition.cards.length} Kartenarten erkannt – jetzt im
+              Listen-Abgleich geprüft.
+            </p>
+            <ul className="mt-2 space-y-1">
+              {cardPhotoRecognition.cards.map((card) => (
+                <li key={card.name}>
+                  {card.amount}× {card.name} · Erkennung: {card.confidence}
+                </li>
+              ))}
+            </ul>
+            {cardPhotoRecognition.warnings.length > 0 ? (
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-700">
+                {cardPhotoRecognition.warnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
