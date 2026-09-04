@@ -48,6 +48,18 @@ export type CardAttack = {
     page: number;
     hasMore: boolean;
   };
+
+  export type CardListResolution = {
+    name: string;
+    amount: number;
+    status: "matched" | "needsChoice" | "notFound";
+    candidates: Card[];
+  };
+
+  export type CardListResolutionResponse = {
+    items: CardListResolution[];
+    errors: string[];
+  };
   
   export type DeckCard = {
     cardId: string;
