@@ -200,6 +200,18 @@ export default function CardsPage() {
     });
   }
 
+  function selectAllFilteredCards() {
+    setSelectedCardIds((currentCardIds) => {
+      const nextCardIds = new Set(currentCardIds);
+
+      for (const card of filteredExternalCards) {
+        nextCardIds.add(card.id);
+      }
+
+      return nextCardIds;
+    });
+  }
+
   function handleAddToCollection(card: Card) {
     const amount = importAmounts[card.id] ?? 1;
 
@@ -312,9 +324,32 @@ export default function CardsPage() {
 
       {externalResult && filteredExternalCards.length > 0 ? (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Ergebnisse aus der Kartendatenbank
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Ergebnisse aus der Kartendatenbank
+            </h2>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span aria-live="polite" className="text-slate-600">
+                {selectedCardIds.size} ausgewählt
+              </span>
+              <button
+                type="button"
+                onClick={selectAllFilteredCards}
+                className="rounded border px-3 py-2 font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Alle angezeigten auswählen
+              </button>
+              {selectedCardIds.size > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCardIds(new Set())}
+                  className="font-medium text-slate-700 underline hover:text-slate-900"
+                >
+                  Auswahl aufheben
+                </button>
+              ) : null}
+            </div>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredExternalCards.map((card) => (
               <article
