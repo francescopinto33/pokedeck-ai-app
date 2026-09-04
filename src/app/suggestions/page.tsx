@@ -69,9 +69,10 @@ export default function SuggestionsPage() {
           </summary>
           <p className="mt-2">
             Gewertet werden Pokémon des jeweiligen Typs, Basis-Pokémon für
-            eine stabile Starthand, passende Basis-Energien und die Anzahl
-            deiner Trainerkarten. Der Wert zeigt die vorhandene Grundlage,
-            nicht die Spielstärke eines fertigen Decks.
+            eine stabile Starthand, durch Vorstufen gestützte Entwicklungen,
+            passende Basis-Energien und die Anzahl deiner Trainerkarten. Der
+            Wert zeigt die vorhandene Grundlage, nicht die Spielstärke eines
+            fertigen Decks.
           </p>
         </details>
 
@@ -141,6 +142,15 @@ export default function SuggestionsPage() {
                     </span>
                   </p>
                 ) : null}
+
+                <p className="mt-3 text-sm text-slate-700">
+                  Für die Deck-Einschätzung berücksichtigt: {" "}
+                  <span className="font-semibold text-slate-900">
+                    {idea.basicPokemonCount +
+                      idea.supportedEvolutionPokemonCount}{" "}
+                    Pokémon
+                  </span>
+                </p>
 
                 <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-700">
                   {idea.hints.map((hint) => (
