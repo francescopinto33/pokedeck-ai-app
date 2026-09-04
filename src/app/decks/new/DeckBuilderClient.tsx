@@ -486,21 +486,51 @@ export default function DeckBuilderClient() {
   }, [selectedCards]);
 
   const evolutionWarnings = useMemo(() => {
-    return selectedCards
-      .filter(
-        (card) =>
-          card.evolvesFrom &&
-          !selectedCards.some(
-            (selectedCard) => selectedCard.name === card.evolvesFrom
-          )
-      )
-      .map(
-        (card) =>
-          card.name +
-          " entwickelt sich aus " +
-          card.evolvesFrom +
-          ", aber diese Vorstufe fehlt im Deck."
+    const selectedCountsByName = new Map<string, number>();
+    const evolvingCardsByName = new Map<string, Card & { count: number }>();
+
+    for (const card of selectedCards) {
+      selectedCountsByName.set(
+        card.name,
+        (selectedCountsByName.get(card.name) ?? 0) + card.count
       );
+
+      if (card.evolvesFrom) {
+        const existingCard = evolvingCardsByName.get(card.name);
+        evolvingCardsByName.set(card.name, {
+          ...card,
+          count: (existingCard?.count ?? 0) + card.count,
+        });
+      }
+    }
+
+    return Array.from(evolvingCardsByName.values()).flatMap((card) => {
+      const previousStageCount = selectedCountsByName.get(card.evolvesFrom!) ?? 0;
+
+      if (previousStageCount === 0) {
+        return [
+          card.name +
+            " entwickelt sich aus " +
+            card.evolvesFrom +
+            ", aber diese Vorstufe fehlt im Deck.",
+        ];
+      }
+
+      if (previousStageCount < card.count) {
+        return [
+          card.name +
+            " ist " +
+            card.count +
+            "-mal enthalten, aber " +
+            card.evolvesFrom +
+            " nur " +
+            previousStageCount +
+            "-mal. Ergänze Vorstufen für eine verlässlichere Entwicklungslinie.",
+        ];
+      }
+
+      return [];
+    });
   }, [selectedCards]);
 
   const missingEnergyTypeWarnings = useMemo(() => {
