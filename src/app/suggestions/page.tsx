@@ -106,7 +106,7 @@ export default function SuggestionsPage() {
                   />
                 </div>
 
-                <dl className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
+                <dl className="mt-4 grid grid-cols-2 gap-2 text-center text-sm sm:grid-cols-4">
                   <div className="rounded bg-slate-50 p-2">
                     <dt className="text-slate-500">Pokémon</dt>
                     <dd className="mt-1 font-semibold text-slate-900">
@@ -117,6 +117,12 @@ export default function SuggestionsPage() {
                     <dt className="text-slate-500">Basis</dt>
                     <dd className="mt-1 font-semibold text-slate-900">
                       {idea.basicPokemonCount}
+                    </dd>
+                  </div>
+                  <div className="rounded bg-slate-50 p-2">
+                    <dt className="text-slate-500">Entwicklung</dt>
+                    <dd className="mt-1 font-semibold text-slate-900">
+                      {idea.evolutionPokemonCount}
                     </dd>
                   </div>
                   <div className="rounded bg-slate-50 p-2">
