@@ -8,6 +8,18 @@ import { validateDeck } from "@/lib/validateDeck";
 import { compareDeckToCollection } from "@/lib/compareDeckToCollection";
 import type { Card, CollectionEntry, Deck } from "@/types";
 
+const energyTypeLabels: Record<string, string> = {
+  Fire: "Feuer",
+  Water: "Wasser",
+  Grass: "Pflanze",
+  Lightning: "Elektro",
+  Psychic: "Psycho",
+  Fighting: "Kampf",
+  Darkness: "Finsternis",
+  Metal: "Metall",
+  Dragon: "Drache",
+};
+
 function getOpeningBasicPokemonChance(basicPokemon: number, totalCards: number) {
   let chanceWithoutBasicPokemon = 1;
 
@@ -83,6 +95,15 @@ export default function DecksPage() {
 
               return card?.isBasicPokemon ? sum + entry.count : sum;
             }, 0);
+            const basicEnergyTypes = Array.from(
+              new Set(
+                deck.cards.flatMap((entry) => {
+                  const card = allCards.find((item) => item.id === entry.cardId);
+
+                  return card?.isBasicEnergy ? card.types ?? [] : [];
+                })
+              )
+            );
             const startHandChance =
               validation.totalCards === 60 &&
               basicPokemonCount > 0 &&
@@ -190,6 +211,16 @@ export default function DecksPage() {
                           </div>
                         ))}
                       </div>
+                      {basicEnergyTypes.length > 0 ? (
+                        <p className="mt-3 text-sm text-slate-700">
+                          Basis-Energietypen: {" "}
+                          <span className="font-medium">
+                            {basicEnergyTypes
+                              .map((type) => energyTypeLabels[type] ?? type)
+                              .join(", ")}
+                          </span>
+                        </p>
+                      ) : null}
                     </div>
 
                     {startHandChance ? (
