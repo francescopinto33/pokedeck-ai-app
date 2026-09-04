@@ -15,7 +15,13 @@ import {
   upsertDeck,
 } from "@/lib/storage";
 import { validateDeck } from "@/lib/validateDeck";
-import type { Card, CollectionEntry, Deck, DeckCard } from "@/types";
+import type {
+  Card,
+  CollectionEntry,
+  Deck,
+  DeckCard,
+  DeckFormat,
+} from "@/types";
 
 type CardFilter = "All" | Card["supertype"];
 
@@ -85,6 +91,7 @@ export default function DeckBuilderClient() {
   const [createdAt, setCreatedAt] = useState<string>("");
   const [deckName, setDeckName] = useState("");
   const [deckCards, setDeckCards] = useState<DeckCard[]>([]);
+  const [deckFormat, setDeckFormat] = useState<DeckFormat>("free");
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
   const [allCards, setAllCards] = useState<Card[]>([]);
   const [collectionMessage, setCollectionMessage] = useState("");
@@ -115,6 +122,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(existingDraft.createdAt);
       setDeckName(existingDraft.name);
       setDeckCards(existingDraft.cards);
+      setDeckFormat(existingDraft.format ?? "free");
       setIsDraftDirty(false);
       setHasDraft(true);
       setDraftMessage("Entwurf lokal wiederhergestellt.");
@@ -129,6 +137,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName(selectedTemplate.name);
       setDeckCards(selectedTemplate.cards.map((entry) => ({ ...entry })));
+      setDeckFormat("free");
       setIsDraftDirty(false);
       setHasDraft(false);
       setDraftMessage("Startervorlage geladen. Passe sie bei Bedarf an.");
@@ -143,6 +152,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName("");
       setDeckCards([]);
+      setDeckFormat("free");
       setIsDraftDirty(false);
       setHasDraft(false);
       return;
@@ -158,6 +168,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName("");
       setDeckCards([]);
+      setDeckFormat("free");
       setIsDraftDirty(false);
       setHasDraft(false);
       return;
@@ -167,6 +178,7 @@ export default function DeckBuilderClient() {
     setCreatedAt(existingDeck.createdAt);
     setDeckName(existingDeck.name);
     setDeckCards(existingDeck.cards);
+    setDeckFormat(existingDeck.format ?? "free");
     setIsDraftDirty(false);
     setHasDraft(false);
   }, [deckIdFromUrl, selectedTemplate, templateIdFromUrl]);
@@ -188,6 +200,7 @@ export default function DeckBuilderClient() {
       id: deckId,
       name: deckName,
       cards: deckCards,
+      format: deckFormat,
       createdAt,
       updatedAt: new Date().toISOString(),
     });
@@ -197,6 +210,7 @@ export default function DeckBuilderClient() {
     deckCards,
     deckId,
     deckIdFromUrl,
+    deckFormat,
     deckName,
     isDraftDirty,
     templateIdFromUrl,
@@ -400,6 +414,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(now);
       setDeckName(selectedTemplate?.name ?? "");
       setDeckCards(selectedTemplate?.cards.map((entry) => ({ ...entry })) ?? []);
+      setDeckFormat("free");
       if (selectedTemplate) {
         setDraftMessage("Startervorlage erneut geladen.");
       }
@@ -413,6 +428,7 @@ export default function DeckBuilderClient() {
       setCreatedAt(savedDeck.createdAt);
       setDeckName(savedDeck.name);
       setDeckCards(savedDeck.cards);
+      setDeckFormat(savedDeck.format ?? "free");
       return;
     }
 
@@ -423,6 +439,7 @@ export default function DeckBuilderClient() {
     setCreatedAt(now);
     setDeckName("");
     setDeckCards([]);
+    setDeckFormat("free");
   }
 
   async function handleCopyMissingCards() {
@@ -539,6 +556,7 @@ export default function DeckBuilderClient() {
       id: finalDeckId,
       name: deckName.trim() || "Unbenanntes Deck",
       cards: deckCards,
+      format: deckFormat,
       createdAt: createdAt || now,
       updatedAt: now,
     };
@@ -630,6 +648,32 @@ export default function DeckBuilderClient() {
             placeholder="Zum Beispiel: Mein erstes Feuer-Deck"
             className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
           />
+        </div>
+
+        <div className="mt-4">
+          <label
+            htmlFor="deck-format"
+            className="mb-2 block text-sm font-medium text-slate-700"
+          >
+            Spielformat
+          </label>
+          <select
+            id="deck-format"
+            value={deckFormat}
+            onChange={(event) => {
+              setDeckFormat(event.target.value as DeckFormat);
+              setDraftMessage("");
+              setIsDraftDirty(true);
+              setHasDraft(true);
+            }}
+            className="w-full rounded-lg border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
+          >
+            <option value="free">Freies Deck</option>
+            <option value="standard-2026">Standardformat 2026</option>
+          </select>
+          <p className="mt-1 text-sm text-slate-500">
+            Freie Decks dürfen auch ältere Karten enthalten.
+          </p>
         </div>
       </div>
 
