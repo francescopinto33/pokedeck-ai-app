@@ -36,6 +36,7 @@ export default function CardsPage() {
     useState<CardSearchResponse | null>(null);
   const [externalError, setExternalError] = useState("");
   const [isSearchingExternal, setIsSearchingExternal] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [externalLanguage, setExternalLanguage] =
     useState<CardSearchLanguage>("de");
   const [externalCardFilter, setExternalCardFilter] =
@@ -122,6 +123,42 @@ export default function CardsPage() {
       );
     } finally {
       setIsSearchingExternal(false);
+    }
+  }
+
+  async function handleLoadMoreExternalCards() {
+    if (!externalResult || !externalResult.hasMore || isLoadingMore) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+    setExternalError("");
+
+    try {
+      const nextResult = await fetchExternalCards(externalResult.page + 1);
+
+      setExternalResult((currentResult) => {
+        if (!currentResult) {
+          return nextResult;
+        }
+
+        return {
+          ...nextResult,
+          cards: [...currentResult.cards, ...nextResult.cards],
+          totalCount: Math.max(
+            currentResult.totalCount,
+            nextResult.totalCount
+          ),
+        };
+      });
+    } catch (error) {
+      setExternalError(
+        error instanceof Error
+          ? error.message
+          : "Die Kartendaten konnten gerade nicht geladen werden."
+      );
+    } finally {
+      setIsLoadingMore(false);
     }
   }
 
@@ -428,6 +465,18 @@ export default function CardsPage() {
               </article>
             ))}
           </div>
+          {externalResult.hasMore ? (
+            <div className="pt-2 text-center">
+              <button
+                type="button"
+                onClick={handleLoadMoreExternalCards}
+                disabled={isLoadingMore}
+                className="rounded-lg border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLoadingMore ? "Weitere Karten werden geladen …" : "Weitere Karten laden"}
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
