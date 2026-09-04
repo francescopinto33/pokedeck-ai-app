@@ -221,6 +221,27 @@ export default function CardsPage() {
     );
   }
 
+  function handleAddSelectedToCollection() {
+    const selectedCards = externalResult?.cards.filter((card) =>
+      selectedCardIds.has(card.id)
+    );
+
+    if (!selectedCards?.length) {
+      return;
+    }
+
+    const totalCopies = selectedCards.reduce((sum, card) => {
+      const amount = importAmounts[card.id] ?? 1;
+      addCardToCollection(card, amount);
+      return sum + amount;
+    }, 0);
+
+    setSelectedCardIds(new Set());
+    setCollectionMessage(
+      `${selectedCards.length} ${selectedCards.length === 1 ? "Kartenart" : "Kartenarten"} mit insgesamt ${totalCopies} ${totalCopies === 1 ? "Exemplar" : "Exemplaren"} wurden zur Sammlung hinzugefügt.`
+    );
+  }
+
   return (
     <section className="space-y-6">
       <div className="rounded-xl border bg-white p-6 shadow-sm">
@@ -340,13 +361,22 @@ export default function CardsPage() {
                 Alle angezeigten auswählen
               </button>
               {selectedCardIds.size > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setSelectedCardIds(new Set())}
-                  className="font-medium text-slate-700 underline hover:text-slate-900"
-                >
-                  Auswahl aufheben
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={handleAddSelectedToCollection}
+                    className="rounded bg-slate-900 px-3 py-2 font-medium text-white hover:bg-slate-800"
+                  >
+                    Auswahl zur Sammlung hinzufügen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCardIds(new Set())}
+                    className="font-medium text-slate-700 underline hover:text-slate-900"
+                  >
+                    Auswahl aufheben
+                  </button>
+                </>
               ) : null}
             </div>
           </div>
