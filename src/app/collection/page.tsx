@@ -7,8 +7,14 @@ import {
   createCollectionCsv,
   mergeCollectionEntries,
   parseCollectionCsv,
+  type CollectionCsvPreview,
 } from "@/lib/collectionCsv";
-import { getCollection, getImportedCards, saveCollection } from "@/lib/storage";
+import {
+  getCollection,
+  getImportedCards,
+  mergeImportedCards,
+  saveCollection,
+} from "@/lib/storage";
 import type { Card, CollectionEntry } from "@/types";
 
 type CollectionCardFilter = "All" | Card["supertype"];
@@ -44,11 +50,8 @@ export default function CollectionPage() {
   const [isFocusActive, setIsFocusActive] = useState(false);
   const [showOwnedOnly, setShowOwnedOnly] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
-  const [importPreview, setImportPreview] = useState<{
-    entries: CollectionEntry[];
-    errors: string[];
-    rowCount: number;
-  } | null>(null);
+  const [importPreview, setImportPreview] =
+    useState<CollectionCsvPreview | null>(null);
   const [importMessage, setImportMessage] = useState("");
 
   useEffect(() => {
@@ -145,7 +148,9 @@ export default function CollectionPage() {
       importPreview.entries
     );
 
+    mergeImportedCards(importPreview.cards);
     setEntries(updatedEntries);
+    setAllCards(getAvailableCards());
     saveCollection(updatedEntries);
     setSaveMessage("");
     setImportMessage(
