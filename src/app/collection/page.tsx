@@ -335,9 +335,10 @@ export default function CollectionPage() {
                 Sammlung per CSV übertragen
               </h3>
               <p className="mt-1 text-sm text-slate-600">
-                Erwartet werden die Spalten <code>cardId</code> und{" "}
-                <code>owned</code>. Unbekannte Karten werden vor dem Import
-                angezeigt und nicht übernommen.
+                Die PokeDeck-AI-Sicherung enthält <code>cardId</code>,{" "}
+                <code>owned</code> und bei echten Karten auch die
+                Kartendaten. So lässt sie sich auf einem anderen Gerät
+                vollständig wiederherstellen.
               </p>
             </div>
             <button
@@ -345,7 +346,7 @@ export default function CollectionPage() {
               onClick={handleExportCollection}
               className="rounded border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
             >
-              CSV herunterladen
+              CSV-Sicherung herunterladen
             </button>
           </div>
 
@@ -370,6 +371,13 @@ export default function CollectionPage() {
                 {importPreview.entries.length} Kartenarten können übernommen
                 werden.
               </p>
+              {importPreview.cards.length > 0 ? (
+                <p>
+                  Zusätzlich werden {importPreview.cards.length} echte{" "}
+                  {importPreview.cards.length === 1 ? "Karte" : "Karten"}{" "}
+                  mit ihren Kartendaten wiederhergestellt.
+                </p>
+              ) : null}
               {importPreview.errors.length > 0 ? (
                 <ul className="list-disc space-y-1 pl-5 text-amber-700">
                   {importPreview.errors.slice(0, 5).map((error) => (
