@@ -101,9 +101,10 @@ export function getCollectionDeckIdeas(
     .map((counts) => {
       const readinessScore = Math.min(
         100,
-        Math.min(40, counts.pokemonCount * 4) +
-          Math.min(35, counts.basicPokemonCount * 7) +
-          Math.min(25, counts.basicEnergyCount * 2)
+        Math.min(30, counts.pokemonCount * 3) +
+          Math.min(25, counts.basicPokemonCount * 6) +
+          Math.min(20, counts.basicEnergyCount * 2) +
+          Math.min(25, trainerCount * 2.5)
       );
       const hints: string[] = [];
 
@@ -122,6 +123,12 @@ export function getCollectionDeckIdeas(
       if (counts.basicEnergyCount < 10) {
         hints.push(
           `Noch ${10 - counts.basicEnergyCount} passende Basis-Energien als Ausgangspunkt ergänzen.`
+        );
+      }
+
+      if (trainerCount < 10) {
+        hints.push(
+          `Noch ${10 - trainerCount} Trainerkarten für eine bessere Unterstützung ergänzen.`
         );
       }
 
